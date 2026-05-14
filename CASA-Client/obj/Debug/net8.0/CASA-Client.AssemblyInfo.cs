@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CASA-Client")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4e39c3f553bf769dce75c1363ecb267647a80671")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ae2878d29e58b2b6ae3afa42f0d95b02aecf3cc3")]
 [assembly: System.Reflection.AssemblyProductAttribute("CASA-Client")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CASA-Client")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
