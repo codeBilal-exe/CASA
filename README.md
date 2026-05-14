@@ -1,102 +1,96 @@
-# MISS - Mini Internet Simulation System
+# CASA - Client And Server Architecture
 
-A comprehensive educational project that simulates a miniature internet ecosystem using **C networking servers** and a **C# WinForms browser application**.
+A premium educational simulation that demonstrates the core mechanics of the internet through a modern **Blazor Hybrid** interface and distributed **C-based networking servers**.
 
 ## 🎯 Project Overview
 
-MISS is an **educational simulation** designed to demonstrate the core mechanics of the internet:
+CASA (Client And Server Architecture) is a full-stack educational tool designed to peel back the layers of how the web works. It simulates the entire lifecycle of a web request:
 
-- **DNS Resolution**: How domain names (like `apple.com`) are converted to IP addresses via UDP.
-- **Web Hosting**: How web servers listen for TCP connections and serve HTML content.
-- **Client-Server Lifecycle**: How to manage and monitor distributed server processes.
-- **Network Failure Handling**: Real-world scenarios like server timeouts and offline states.
+- **DNS Resolution**: Convert domain names to IP addresses via low-level UDP queries.
+- **Distributed Web Hosting**: Multiple independent C-based servers simulating global websites.
+- **Process Orchestration**: A central control panel to manage the lifecycle of simulated server infrastructure.
+- **Live Packet Capture**: Real-time visualization of UDP (DNS) and TCP (HTTP) traffic flows.
+- **Robust Error Simulation**: Hands-on experience with timeouts, offline states, and NXDOMAIN errors.
 
-## 📁 Project Structure
+## 📁 Project Architecture
 
-```
-MISS/
-├── Browser/                      # C# WinForms Client
-│   ├── Forms/                    
-│   │   └── MainBrowserForm.cs    # Web Browser + Server Settings UI
-│   ├── Services/                 
-│   │   ├── NetworkingService.cs  # DNS (UDP) & HTTP (TCP) logic
-│   │   └── ServerControlService.cs # Process management (Start/Stop)
-│   └── Models/                   
-│       └── PacketLog.cs          # Data model for logging
+```text
+CASA-System/
+├── CASA-Client/                  # Modern Blazor UI Client
+│   ├── Components/               # Razor Components (Pages, Layouts, UI)
+│   ├── Services/                 # Core Logic (Networking, Server Control)
+│   └── Models/                   # Data structures for logs and info
 │
 ├── Servers/
-│   └── DNS_Server/               # UDP DNS Server (C)
-│       ├── DNS_Server.c
-│       └── DNS_Server.exe        # Resolves apple.com, google.com, github.com
+│   └── DNS_Server/               # UDP DNS Resolver (C)
+│       └── DNS_Server.c          # Robust resolver logic
 │
-├── Websites/                     # Individual Website Servers (C)
-│   ├── apple/                    # Port 8081
-│   │   ├── apple_server.c
-│   │   ├── apple_server.exe
-│   │   └── index.html
-│   ├── google/                   # Port 8082
-│   │   ├── google_server.c
-│   │   ├── google_server.exe
-│   │   └── index.html
-│   └── github/                   # Port 8083
-│       ├── github_server.c
-│       ├── github_server.exe
-│       └── index.html
+├── Websites/                     # Independent Website Nodes (C)
+│   ├── apple/                    # Port 8081 - Simulation of Apple.com
+│   ├── google/                   # Port 8082 - Simulation of Google.com
+│   └── github/                   # Port 8083 - Simulation of GitHub.com
 │
-└── compile_servers.bat           # One-click recompile for all C servers
+├── compile_servers.bat           # Automated compilation for all C servers
+└── run.bat                       # Master launcher for the entire system
 ```
 
-## 🚀 Quick Start
+## 🚀 Getting Started
 
 ### 1. Prerequisites
-- **GCC (MinGW)** installed and in your system PATH.
-- **.NET 8.0 SDK** (for the C# Browser).
+
+- **GCC (MinGW)**: Required to compile the C-based networking servers.
+- **.NET 8.0 SDK**: Required to run the modern Blazor-based browser.
 
 ### 2. Compilation
-If you modify any server code, run the compilation script from the project root:
+
+To ensure all server binaries are up to date with the latest networking logic:
+
 ```powershell
 ./compile_servers.bat
 ```
 
-### 3. Running the System
-1. Launch the **MISS Browser** application.
-2. Navigate to the **Server Settings** tab.
-3. Start the **DNS Server** and your desired **Website Servers**.
-4. Go back to the **Web Browser** tab and enter a domain (e.g., `apple.com`).
+### 3. Launching the System
+
+Simply run the master launcher script:
+
+```powershell
+./run.bat
+```
 
 ## 💻 System Components
 
-### DNS Server (UDP Port 5053)
-- Handles incoming domain requests.
-- Responds with `IP:PORT` or `NOT_FOUND`.
-- Hardcoded records for `apple.com`, `google.com`, and `github.com`.
+### 🌐 The Browser (Blazor Hybrid)
 
-### Website Servers (TCP Ports 8081-8083)
-- Each website runs its own dedicated C server process.
-- Listens for `GET / HTTP/1.1` requests.
-- Streams the local `index.html` file back to the browser.
+A high-performance, reactive UI that acts as the client.
 
-### Browser (C# WinForms)
-- **Networking**: Uses `UdpClient` for DNS and `TcpClient` for web pages.
-- **Server Control**: Uses the `Process` class to start/stop the C executables.
-- **Logging**: Real-time visualization of network packets (UDP/TCP flow).
-- **Error Handling**: Graceful handling of timeouts, offline servers, and invalid domains.
+- **Networking Engine**: Implements raw `UdpClient` for DNS and `TcpClient` for HTTP/1.0.
+- **Control Center**: Directly manages external server processes through the `System.Diagnostics.Process` API.
+- **Live Terminal**: A beautiful live log viewer that captures every packet exchanged in the system.
 
-## 🔄 System Flow
+### 🔍 DNS Resolver (UDP 5053)
 
-1. **User Input**: Enter `apple.com` in the address bar.
-2. **DNS Query (UDP)**: Browser asks DNS Server (Port 5053) for the address.
-3. **DNS Response**: DNS returns `127.0.0.1:8081`.
-4. **TCP Connection**: Browser connects to the Apple Server on port 8081.
-5. **HTTP Request**: Browser sends `GET /`.
-6. **Server Response**: Apple Server reads `index.html` and sends HTML data.
-7. **Rendering**: Browser displays the "Think different" page.
+The heart of the simulation's routing logic.
 
-## 🎓 Educational Objectives
-- Understand **Socket Programming** in C and C#.
-- Learn the difference between **UDP** (connectionless) and **TCP** (connection-oriented).
-- Observe **Process Management** and how applications interact with external services.
-- Debug common network errors in a simulated environment.
+- Listens for raw UDP packets containing domain names.
+- Uses a hash-map style lookup to resolve simulated domains.
+- Provides real-time feedback in its own console window.
+
+### 📄 Website Servers (TCP 8081-8083)
+
+Atomic, lightweight C servers representing independent web nodes.
+
+- Each server is a separate process, simulating a distributed internet.
+- Handles standard HTTP/1.1 `GET` requests and serves local `index.html` files.
+
+## 🔄 The "Internet" Flow
+
+1. **User Request**: User enters `apple.com` in the browser.
+2. **DNS Phase (UDP)**: Browser sends a UDP datagram to `127.0.0.1:5053`.
+3. **DNS Reply**: Server responds with `127.0.0.1:8081`.
+4. **HTTP Phase (TCP)**: Browser establishes a TCP handshake with the Apple node.
+5. **Data Exchange**: Browser sends a `GET` request; server streams HTML content.
+6. **Rendering**: The browser's sandboxed viewport renders the received content.
 
 ---
-**MISS: Where Learning Meets Networking** 🌐
+
+**CASA: Engineering the Internet, One Packet at a Time.** 🌐

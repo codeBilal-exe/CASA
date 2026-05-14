@@ -1,0 +1,37 @@
+@namespace CASA_Client.Components
+@using CASA_Client.Models
+@using CASA_Client.Services
+@implements IDisposable
+@inject PacketLogService LogService
+
+<div class="log-panel">
+    <div class="log-header">
+        <span class="log-title">◈ LIVE PACKET CAPTURE</span>
+        <span class="log-hint">UDP = DNS &nbsp;·&nbsp; TCP = HTTP &nbsp;·&nbsp; ERR = Error</span>
+        <button class="btn-clr" @onclick="LogService.Clear">CLR</button>
+    </div>
+
+    <div class="log-body" id="log-scroll">
+        @foreach (var log in LogService.Logs)
+        {
+            <div class="log-row @log.Protocol.ToLower()">
+                <span class="log-bar"></span>
+                <span class="log-ts">[@log.Timestamp.ToString("HH:mm:ss.fff")]</span>
+                <span class="log-proto">@log.Protocol.PadRight(7)</span>
+                <span class="log-action">@log.Action.PadRight(10)</span>
+                <span class="log-msg">@log.Message</span>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    protected override void OnInitialized()
+        => LogService.OnChanged += Refresh;
+
+    private void Refresh()
+        => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+        => LogService.OnChanged -= Refresh;
+}

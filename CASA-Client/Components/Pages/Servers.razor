@@ -1,0 +1,42 @@
+@page "/servers"
+@namespace CASA_Client.Components.Pages
+@using CASA_Client.Services
+@using CASA_Client.Models
+@inject ServerControlService ServerControl
+@inject PacketLogService LogService
+@rendermode InteractiveServer
+
+<PageTitle>CASA · Servers</PageTitle>
+
+<div class="servers-page">
+
+    <div class="servers-header">
+        <div class="sh-accent"></div>
+        <div class="sh-text">
+            <h1>SERVER CONTROL PANEL</h1>
+            <p>Start / stop individual servers before navigating</p>
+        </div>
+    </div>
+
+    <div class="servers-grid">
+        @foreach (var server in ServerControl.Servers)
+        {
+            <ServerCard Server="server" OnLog="HandleLog" />
+        }
+    </div>
+
+    <div class="servers-log-section">
+        <PacketLogViewer />
+    </div>
+
+</div>
+
+@code {
+    private void HandleLog(string raw)
+    {
+        // raw format: "PROTOCOL|ACTION|MESSAGE"
+        var parts = raw.Split('|', 3);
+        if (parts.Length == 3)
+            LogService.Add(parts[0], parts[1], parts[2]);
+    }
+}

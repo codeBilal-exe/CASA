@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apple</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%230288d1'/><text x='50' y='60' font-size='40' font-weight='bold' text-anchor='middle' fill='white'>⬡</text></svg>">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@100;300;700&display=swap');
+
+  :root {
+    --bg: #000;
+    --text: #f5f5f7;
+    --subtle: #6e6e73;
+    --accent: #2997ff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0;
+    background: rgba(0,0,0,.72);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    display: flex; align-items: center; justify-content: center;
+    height: 44px; z-index: 100;
+    border-bottom: 1px solid rgba(255,255,255,.06);
+  }
+  nav ul { list-style: none; display: flex; gap: 28px; }
+  nav ul li a {
+    color: rgba(245,245,247,.8);
+    text-decoration: none;
+    font-size: 12px;
+    letter-spacing: .01em;
+    transition: color .2s;
+  }
+  nav ul li a:hover { color: #fff; }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    padding: 120px 24px 60px;
+    background: radial-gradient(ellipse 80% 60% at 50% 40%, #1c1c1e 0%, #000 100%);
+    animation: fadeIn 1.2s ease;
+  }
+
+  @keyframes fadeIn { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:none; } }
+  @keyframes shimmer {
+    0%   { background-position: -400% center; }
+    100% { background-position: 400% center; }
+  }
+
+  .eyebrow {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 18px;
+    animation: fadeIn 1s ease .1s both;
+  }
+
+  h1 {
+    font-size: clamp(64px, 10vw, 120px);
+    font-weight: 700;
+    letter-spacing: -.04em;
+    line-height: 1;
+    background: linear-gradient(135deg, #fff 30%, #888 70%, #fff 100%);
+    background-size: 400%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: fadeIn 1s ease .2s both, shimmer 6s linear 1.5s infinite;
+    margin-bottom: 20px;
+  }
+
+  .tagline {
+    font-size: clamp(28px, 5vw, 56px);
+    font-weight: 300;
+    letter-spacing: -.02em;
+    color: #f5f5f7;
+    margin-bottom: 16px;
+    animation: fadeIn 1s ease .4s both;
+  }
+
+  .sub {
+    font-size: 17px;
+    color: var(--subtle);
+    max-width: 560px;
+    line-height: 1.6;
+    animation: fadeIn 1s ease .6s both;
+    margin-bottom: 40px;
+  }
+
+  .cta-row {
+    display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;
+    animation: fadeIn 1s ease .8s both;
+  }
+
+  .btn {
+    padding: 14px 28px;
+    border-radius: 980px;
+    font-size: 15px;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform .2s, box-shadow .2s;
+    border: none;
+  }
+  .btn:hover { transform: scale(1.03); box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+
+  /* ── PRODUCT STRIP ── */
+  .products {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2px;
+    background: #1d1d1f;
+    border-top: 1px solid #1d1d1f;
+  }
+
+  .product-card {
+    background: #000;
+    padding: 60px 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: background .3s;
+    position: relative;
+    overflow: hidden;
+  }
+  .product-card:hover { background: #111; }
+  .product-card::after {
+    content: '';
+    position: absolute; inset: 0;
+    opacity: 0;
+    transition: opacity .3s;
+    background: radial-gradient(circle at center, rgba(41,151,255,.08), transparent 70%);
+  }
+  .product-card:hover::after { opacity: 1; }
+
+  .product-emoji { font-size: 48px; margin-bottom: 20px; display: block; }
+  .product-name { font-size: 28px; font-weight: 600; margin-bottom: 8px; }
+  .product-desc { font-size: 14px; color: var(--subtle); }
+  .product-link { font-size: 14px; color: var(--accent); margin-top: 12px; display: block; }
+
+  /* ── FOOTER ── */
+  footer {
+    background: #1d1d1f;
+    color: var(--subtle);
+    font-size: 11px;
+    text-align: center;
+    padding: 20px;
+    border-top: 1px solid #333;
+    line-height: 1.8;
+  }
+  footer span { color: #555; }
+</style>
+</head>
+<body>
+
+<nav>
+  <ul>
+    <li><a href="#">Store</a></li>
+    <li><a href="#">Mac</a></li>
+    <li><a href="#">iPad</a></li>
+    <li><a href="#">iPhone</a></li>
+    <li><a href="#">Watch</a></li>
+    <li><a href="#">Vision</a></li>
+    <li><a href="#">Support</a></li>
+  </ul>
+</nav>
+
+<section class="hero">
+  <p class="eyebrow">Designed by Apple in California</p>
+  <h1>Apple</h1>
+  <p class="tagline">Think different.</p>
+  <p class="sub">Technology so advanced it feels like magic. Beautifully simple. Powerfully capable. Built for you.</p>
+  <div class="cta-row">
+    <a class="btn btn-primary" href="#">Shop now</a>
+    <a class="btn btn-secondary" href="#">Learn more</a>
+  </div>
+</section>
+
+<section class="products">
+  <div class="product-card">
+    <span class="product-emoji">📱</span>
+    <div class="product-name">iPhone 16 Pro</div>
+    <div class="product-desc">A17 Pro chip. Titanium design.<br>48MP Fusion camera.</div>
+    <a class="product-link" href="#">Learn more →</a>
+  </div>
+  <div class="product-card">
+    <span class="product-emoji">💻</span>
+    <div class="product-name">MacBook Pro</div>
+    <div class="product-desc">M3 Max chip. Up to 128GB RAM.<br>Liquid Retina XDR display.</div>
+    <a class="product-link" href="#">Learn more →</a>
+  </div>
+  <div class="product-card">
+    <span class="product-emoji">🥽</span>
+    <div class="product-name">Apple Vision Pro</div>
+    <div class="product-desc">Spatial computing.<br>Your apps. In the world.</div>
+    <a class="product-link" href="#">Learn more →</a>
+  </div>
+  <div class="product-card">
+    <span class="product-emoji">⌚</span>
+    <div class="product-name">Apple Watch Ultra 2</div>
+    <div class="product-desc">The most rugged Apple Watch.<br>Built for adventure.</div>
+    <a class="product-link" href="#">Learn more →</a>
+  </div>
+</section>
+
+<footer>
+  <p>Copyright &copy; 2026 Apple Inc. All rights reserved.</p>
+  <p><span>Privacy Policy · Terms of Use · Sales and Refunds · Legal · Site Map</span></p>
+  <p style="margin-top:8px;color:#333">Simulated by CASA · Client And Server Architecture</p>
+</footer>
+
+</body>
+</html>

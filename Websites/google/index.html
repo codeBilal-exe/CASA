@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Google</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%230288d1'/><text x='50' y='60' font-size='40' font-weight='bold' text-anchor='middle' fill='white'>⬡</text></svg>">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #202124;
+    color: #e8eaed;
+    font-family: arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── NAV ── */
+  header {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 12px 20px;
+    gap: 16px;
+  }
+  header a {
+    color: #e8eaed;
+    text-decoration: none;
+    font-size: 13px;
+    opacity: .7;
+  }
+  header a:hover { opacity: 1; }
+  header .sign-in {
+    background: #8ab4f8;
+    color: #202124;
+    padding: 8px 22px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    opacity: 1;
+    transition: background .2s;
+  }
+  header .sign-in:hover { background: #aecbfa; }
+
+  /* ── CENTRE ── */
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-bottom: 120px;
+    animation: slideUp .7s ease;
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  /* Coloured Google logo */
+  .logo {
+    font-size: 78px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 28px;
+    user-select: none;
+  }
+  .g1 { color: #4285f4; }
+  .g2 { color: #ea4335; }
+  .g3 { color: #fbbc05; }
+  .g4 { color: #4285f4; }
+  .g5 { color: #34a853; }
+  .g6 { color: #ea4335; }
+
+  /* Search box */
+  .search-wrap {
+    position: relative;
+    width: 540px;
+    max-width: 90vw;
+    margin-bottom: 24px;
+  }
+  .search-icon {
+    position: absolute;
+    left: 16px; top: 50%;
+    transform: translateY(-50%);
+    color: #9aa0a6;
+    font-size: 18px;
+  }
+  .search-wrap input {
+    width: 100%;
+    padding: 14px 50px 14px 46px;
+    background: #303134;
+    border: 1px solid #303134;
+    border-radius: 24px;
+    color: #e8eaed;
+    font-size: 16px;
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .search-wrap input:focus {
+    border-color: #8ab4f8;
+    box-shadow: 0 0 0 3px rgba(138,180,248,.15);
+  }
+  .search-wrap input::placeholder { color: #9aa0a6; }
+  .mic-icon {
+    position: absolute;
+    right: 16px; top: 50%;
+    transform: translateY(-50%);
+    color: #8ab4f8;
+    cursor: pointer;
+    font-size: 18px;
+  }
+
+  /* Buttons */
+  .btn-row {
+    display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+  }
+  .btn-row button {
+    background: #303134;
+    color: #e8eaed;
+    border: 1px solid #303134;
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+  }
+  .btn-row button:hover {
+    background: #3c4043;
+    border-color: #5f6368;
+  }
+
+  /* Language notice */
+  .lang-notice {
+    margin-top: 28px;
+    font-size: 13px;
+    color: #9aa0a6;
+  }
+  .lang-notice a { color: #8ab4f8; text-decoration: none; }
+
+  /* ── QUICK LINKS ── */
+  .quicklinks {
+    display: flex;
+    gap: 28px;
+    margin-top: 48px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .ql-item {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 8px; cursor: pointer;
+    transition: transform .2s;
+  }
+  .ql-item:hover { transform: translateY(-4px); }
+  .ql-icon {
+    width: 52px; height: 52px;
+    background: #303134;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+  .ql-label { font-size: 12px; color: #9aa0a6; }
+
+  /* ── FOOTER ── */
+  footer {
+    background: #171717;
+    border-top: 1px solid #3c4043;
+    padding: 14px 24px;
+  }
+  .footer-top {
+    font-size: 13px;
+    color: #9aa0a6;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #3c4043;
+    margin-bottom: 12px;
+  }
+  .footer-bot {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .footer-bot a {
+    color: #9aa0a6; font-size: 13px; text-decoration: none;
+  }
+  .footer-bot a:hover { text-decoration: underline; }
+  .footer-links { display: flex; gap: 20px; }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="#">About</a>
+  <a href="#">Store</a>
+  <a href="#" class="sign-in">Sign in</a>
+</header>
+
+<main>
+  <div class="logo">
+    <span class="g1">G</span><span class="g2">o</span><span class="g3">o</span><span class="g4">g</span><span class="g5">l</span><span class="g6">e</span>
+  </div>
+
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" placeholder="Search Google or type a URL" autofocus>
+    <span class="mic-icon">🎙</span>
+  </div>
+
+  <div class="btn-row">
+    <button>Google Search</button>
+    <button>I'm Feeling Lucky</button>
+  </div>
+
+  <p class="lang-notice">
+    Google offered in: <a href="#">Español</a> &nbsp; <a href="#">Français</a> &nbsp; <a href="#">中文</a>
+  </p>
+
+  <div class="quicklinks">
+    <div class="ql-item"><div class="ql-icon">▶</div><span class="ql-label">YouTube</span></div>
+    <div class="ql-item"><div class="ql-icon">📧</div><span class="ql-label">Gmail</span></div>
+    <div class="ql-item"><div class="ql-icon">🗺</div><span class="ql-label">Maps</span></div>
+    <div class="ql-item"><div class="ql-icon">🛒</div><span class="ql-label">Shopping</span></div>
+    <div class="ql-item"><div class="ql-icon">📰</div><span class="ql-label">News</span></div>
+    <div class="ql-item"><div class="ql-icon">📅</div><span class="ql-label">Calendar</span></div>
+  </div>
+</main>
+
+<footer>
+  <div class="footer-top">Pakistan</div>
+  <div class="footer-bot">
+    <div class="footer-links">
+      <a href="#">Advertising</a>
+      <a href="#">Business</a>
+      <a href="#">How Search works</a>
+    </div>
+    <div class="footer-links">
+      <a href="#">Privacy</a>
+      <a href="#">Terms</a>
+      <a href="#">Settings</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

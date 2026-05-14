@@ -1,0 +1,24 @@
+@inherits LayoutComponentBase
+@namespace CASA_Client.Components.Layout
+
+<div class="casa-shell">
+    <div class="chrome-bar"></div>
+
+    <header class="shell-header">
+        <img src="/images/logo.svg" alt="CASA Logo" class="casa-logo-img" />
+        <div class="header-text">
+            <span class="casa-tagline">Client And Server Architecture</span>
+            <span class="casa-version">v1.0</span>
+        </div>
+    </header>
+
+    <nav class="tab-nav">
+        <NavLink href="/"        Match="NavLinkMatch.All"    class="tab-link">◉ BROWSER</NavLink>
+        <NavLink href="/servers" Match="NavLinkMatch.Prefix" class="tab-link">⚙ SERVERS</NavLink>
+    </nav>
+    <div class="tab-rail"></div>
+
+    <main class="shell-body">
+        @Body
+    </main>
+</div>

@@ -1,0 +1,47 @@
+@namespace CASA_Client.Components
+@using CASA_Client.Models
+@using CASA_Client.Services
+@inject ServerControlService ServerControl
+
+<div class="server-card @(Server.IsOnline ? "online" : "offline")">
+    <div class="card-rail"></div>
+
+    <div class="card-body">
+        <div class="card-left">
+            <div class="status-dot @(Server.IsOnline ? "pulse" : "")"></div>
+            <div class="card-info">
+                <span class="card-name">@Server.Name</span>
+                <span class="card-port">@Server.Protocol &nbsp;·&nbsp; Port @Server.Port</span>
+            </div>
+        </div>
+
+        <span class="card-desc">@Server.Description</span>
+
+        <div class="card-right">
+            <span class="status-text @(Server.IsOnline ? "text-green" : "text-red")">
+                @(Server.IsOnline ? "ONLINE" : "OFFLINE")
+            </span>
+            <button class="btn @(Server.IsOnline ? "btn-stop" : "btn-start")"
+                    @onclick="Toggle">
+                @(Server.IsOnline ? "STOP" : "START")
+            </button>
+        </div>
+    </div>
+
+    @if (Server.IsOnline)
+    {
+        <div class="card-glow-bar"></div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public ServerInfo Server { get; set; } = null!;
+    [Parameter] public EventCallback<string> OnLog { get; set; }
+
+    private async Task Toggle()
+    {
+        ServerControl.Toggle(Server);
+        string state = Server.IsOnline ? "ONLINE" : "OFFLINE";
+        await OnLog.InvokeAsync($"SYSTEM|{(Server.IsOnline ? "START" : "STOP")}|{Server.Name} → {state}");
+    }
+}
