@@ -13,6 +13,14 @@
 
 <body>
     <Routes />
+    <script>
+        window.casaTheme = {
+            setTheme: function (themeName) {
+                document.documentElement.setAttribute("data-theme", themeName);
+                document.body.setAttribute("data-theme", themeName);
+            }
+        };
+    </script>
     <script src="_framework/blazor.server.js"></script>
 </body>
 

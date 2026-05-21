@@ -1,0 +1,42 @@
+@namespace CASA_Client.Components
+@inject CASA_Client.Services.ThemeState ThemeState
+
+<div class="server-card">
+    <div class="card-body">
+        <div class="card-left">
+            <div class="card-info">
+                <span class="card-name">Theme Toggle Example</span>
+                <span class="card-port">Current: @ThemeState.ThemeName.ToUpperInvariant()</span>
+            </div>
+        </div>
+        <div class="card-right">
+            <button class="btn btn-theme" @onclick="ThemeState.Toggle">
+                @(ThemeState.IsDarkMode ? "Switch To Light" : "Switch To Dark")
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="log-panel" style="margin-top: 12px;">
+    <div class="log-body">
+        <div class="log-row udp">
+            <span class="log-bar"></span>
+            <span class="log-proto">UDP</span>
+            <span class="log-msg">DNS query packet</span>
+        </div>
+        <div class="log-row tcp">
+            <span class="log-bar"></span>
+            <span class="log-proto">TCP</span>
+            <span class="log-msg">HTTP payload packet</span>
+        </div>
+    </div>
+</div>
+
+<div class="viewport" style="padding: 12px; height: 220px;">
+    <div class="viewport-frame">
+        <div class="viewport-empty">
+            <div class="empty-text">Viewport frame stays light in every app theme.</div>
+            <div class="empty-hint">Background #FFFFFF, text #1A1A1A, tokenized border.</div>
+        </div>
+    </div>
+</div>

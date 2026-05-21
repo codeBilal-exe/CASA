@@ -1,8 +1,13 @@
 {
   "version": 2,
-  "dgSpecHash": "rJkQ3t3JSVk=",
+  "dgSpecHash": "07pXDKZ5Szw=",
   "success": true,
-  "projectFilePath": "C:\\Users\\Bilal\\OneDrive\\Desktop\\MISS-Mini-Internet-Simulation-System\\CASA-Client\\CASA-Client.csproj",
-  "expectedPackageFiles": [],
+  "projectFilePath": "C:\\Users\\DELL\\Downloads\\CASA\\CASA-Client\\CASA-Client.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\DELL\\.nuget\\packages\\microsoft.netcore.app.ref\\8.0.27\\microsoft.netcore.app.ref.8.0.27.nupkg.sha512",
+    "C:\\Users\\DELL\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\8.0.27\\microsoft.windowsdesktop.app.ref.8.0.27.nupkg.sha512",
+    "C:\\Users\\DELL\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\8.0.27\\microsoft.aspnetcore.app.ref.8.0.27.nupkg.sha512",
+    "C:\\Users\\DELL\\.nuget\\packages\\microsoft.netcore.app.host.win-x64\\8.0.27\\microsoft.netcore.app.host.win-x64.8.0.27.nupkg.sha512"
+  ],
   "logs": []
 }

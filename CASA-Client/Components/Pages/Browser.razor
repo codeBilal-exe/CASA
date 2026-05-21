@@ -3,100 +3,114 @@
 @using CASA_Client.Services
 @using CASA_Client.Models
 @inject NetworkingService Network
-@inject PacketLogService   LogService
-@inject IJSRuntime         JS
-@rendermode InteractiveServer
+@inject PacketLogService LogService
 
-<PageTitle>CASA · Browser</PageTitle>
+<PageTitle>CASA - Browser</PageTitle>
 
 <div class="browser-page">
+    <section class="browser-toolbar">
+        <div class="address-bar-wrap">
+            <span class="ab-label">http://</span>
+            <input class="address-input"
+                   @bind="_domain"
+                   @bind:event="oninput"
+                   @onkeydown="OnKeyDown"
+                   placeholder="apple.com"
+                   spellcheck="false" />
 
-    <!-- ── Address Bar ─────────────────────────────────────────────── -->
-    <div class="address-bar-wrap">
-        <span class="ab-label">http://</span>
-        <input class="address-input"
-               @bind="_domain"
-               @bind:event="oninput"
-               @onkeydown="OnKeyDown"
-               placeholder="apple.com"
-               spellcheck="false" />
-        <button class="btn btn-go @(_loading ? "btn-loading" : "")"
-                @onclick="Navigate"
-                disabled="@_loading">
-            @(_loading ? "..." : "GO →")
-        </button>
-        <button class="btn btn-src @(_sourceOpen ? "active" : "")"
-                @onclick="ToggleSource"
-                title="Toggle source view">
-            { }
-        </button>
-    </div>
+            <div class="browser-actions">
+                <button class="btn btn-go @(_loading ? "btn-loading" : "")"
+                        @onclick="Navigate"
+                        disabled="@_loading">
+                    @(_loading ? "Loading" : "Go")
+                </button>
 
-    <!-- ── Status strip ────────────────────────────────────────────── -->
-    <div class="status-strip">
-        <span class="status-icon @_statusClass">@_statusIcon</span>
-        <span class="status-text">@_statusText</span>
-        @if (_loading)
-        {
-            <span class="status-loader"></span>
-        }
-    </div>
+                <button class="btn btn-ghost @(_sourceOpen ? "active" : "")"
+                        @onclick="ToggleSource"
+                        title="Toggle HTML source">
+                    Source
+                </button>
 
-    <!-- ── Main area: viewport + source panel ──────────────────────── -->
-    <div class="viewport-wrap">
+                <button class="btn btn-tracer @(_tracerOpen ? "active" : "")"
+                        @onclick="ToggleTracer"
+                        title="Toggle Live Packet Tracer">
+                    Live Tracer
+                </button>
+            </div>
+        </div>
 
-        <!-- Rendered page -->
-        <div class="viewport @(_sourceOpen ? "shrunk" : "")">
-            @if (!string.IsNullOrEmpty(_html))
+        <div class="status-strip">
+            <span class="status-icon @_statusClass">@_statusIcon</span>
+            <span class="status-text">@_statusText</span>
+            @if (_loading)
             {
-                <!-- Sandboxed iframe fed via srcdoc -->
-                <iframe class="render-frame"
-                        srcdoc="@_html"
-                        sandbox="allow-scripts allow-same-origin"
-                        title="Rendered page"></iframe>
+                <span class="status-loader"></span>
             }
-            else
+        </div>
+    </section>
+
+    <div class="browser-stage @(_tracerOpen ? "with-tracer" : "")">
+        <div class="viewport-wrap">
+            <div class="viewport @(_sourceOpen ? "shrunk" : "")">
+                <div class="viewport-frame">
+                    @if (!string.IsNullOrEmpty(_html))
+                    {
+                        <iframe class="render-frame"
+                                srcdoc="@_html"
+                                sandbox="allow-scripts allow-same-origin"
+                                title="Rendered page"></iframe>
+                    }
+                    else
+                    {
+                        <div class="viewport-empty">
+                            <div class="empty-icon">Web Viewport</div>
+                            <div class="empty-text">Enter a domain and press Go</div>
+                            <div class="empty-hint">Try: apple.com | google.com | github.com</div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            @if (_sourceOpen)
             {
-                <div class="viewport-empty">
-                    <div class="empty-icon">◎</div>
-                    <div class="empty-text">Enter a domain and press GO</div>
-                    <div class="empty-hint">Try: apple.com · google.com · github.com</div>
+                <div class="source-panel">
+                    <div class="source-header">
+                        <span>INDEX.HTML SOURCE</span>
+                        <span class="source-bytes">@_html.Length bytes</span>
+                    </div>
+                    <pre class="source-body"><code>@_html</code></pre>
                 </div>
             }
         </div>
 
-        <!-- Source panel -->
-        @if (_sourceOpen)
+        @if (_tracerOpen)
         {
-            <div class="source-panel">
-                <div class="source-header">
-                    <span>◈ INDEX.HTML SOURCE</span>
-                    <span class="source-bytes">@_html.Length bytes</span>
-                </div>
-                <pre class="source-body"><code>@_html</code></pre>
+            <div class="tracer-drawer">
+                <PacketLogViewer />
             </div>
         }
     </div>
-
-    <!-- ── Log viewer ──────────────────────────────────────────────── -->
-    <PacketLogViewer />
-
 </div>
 
 @code {
-    private string _domain     = "apple.com";
-    private string _html       = string.Empty;
-    private bool   _loading    = false;
-    private bool   _sourceOpen = false;
-    private string _statusText = "Ready — enter a domain and press GO";
-    private string _statusIcon = "●";
+    private string _domain = "apple.com";
+    private string _html = string.Empty;
+    private bool _loading;
+    private bool _sourceOpen;
+    private bool _tracerOpen;
+    private string _statusText = "Ready - enter a domain and press Go";
+    private string _statusIcon = "*";
     private string _statusClass = "idle";
 
     private void ToggleSource() => _sourceOpen = !_sourceOpen;
+    private void ToggleTracer() => _tracerOpen = !_tracerOpen;
 
     private async Task OnKeyDown(KeyboardEventArgs e)
     {
-        if (e.Key == "Enter") await Navigate();
+        if (e.Key == "Enter")
+        {
+            await Navigate();
+        }
     }
 
     private async Task Navigate()
@@ -107,11 +121,14 @@
             .Replace("https://", "")
             .TrimEnd('/');
 
-        if (string.IsNullOrEmpty(domain)) return;
+        if (string.IsNullOrEmpty(domain))
+        {
+            return;
+        }
 
-        _loading     = true;
-        _statusText  = $"Resolving {domain} …";
-        _statusIcon  = "▶";
+        _loading = true;
+        _statusText = $"Resolving {domain} ...";
+        _statusIcon = ">";
         _statusClass = "loading";
         StateHasChanged();
 
@@ -119,43 +136,40 @@
 
         try
         {
-            // ── 1. DNS ──
-            LogService.Add("UDP", "Query →", $"DNS lookup for [{domain}]  →  127.0.0.1:5053");
+            LogService.Add("UDP", "Query ->", $"DNS lookup for [{domain}] -> 127.0.0.1:5053");
             var (ip, port) = await Network.ResolveDnsAsync(domain);
 
             if (ip == "NOT_FOUND")
             {
                 LogService.Add("UDP", "NXDOMAIN", $"No DNS record for [{domain}]");
-                ShowError("NXDOMAIN", $"No DNS record for «{domain}».");
+                ShowError("NXDOMAIN", $"No DNS record for '{domain}'.");
                 return;
             }
 
-            LogService.Add("UDP", "← Reply", $"Resolved {domain} → {ip}:{port}");
-            _statusText = $"Connecting {ip}:{port} …";
+            LogService.Add("UDP", "<- Reply", $"Resolved {domain} -> {ip}:{port}");
+            _statusText = $"Connecting {ip}:{port} ...";
             StateHasChanged();
 
-            // ── 2. HTTP ──
-            LogService.Add("TCP", "SYN →", $"Opening TCP connection to {ip}:{port}");
+            LogService.Add("TCP", "SYN ->", $"Opening TCP connection to {ip}:{port}");
             string html = await Network.FetchPageAsync(ip, port);
-            LogService.Add("TCP", "← ACK", $"HTML received ({html.Length} bytes)");
+            LogService.Add("TCP", "<- ACK", $"HTML received ({html.Length} bytes)");
 
-            _html        = html;
-            _statusText  = $"✔  {domain}   [{html.Length} bytes]";
-            _statusIcon  = "✔";
+            _html = html;
+            _statusText = $"OK  {domain}  [{html.Length} bytes]";
+            _statusIcon = "+";
             _statusClass = "ok";
-
-            // Auto-open source on first successful load
-            if (!_sourceOpen) _sourceOpen = true;
         }
         catch (Exception ex)
         {
-            string msg = ex.Message switch {
-                "DNS_OFFLINE"    => "DNS Server is Offline — start it in the SERVERS tab",
-                "DNS_TIMEOUT"    => "DNS Request Timed Out",
-                "SERVER_OFFLINE" => "Website Server is Offline — start it in the SERVERS tab",
+            string msg = ex.Message switch
+            {
+                "DNS_OFFLINE" => "DNS Server is Offline - start it in the SERVERS tab",
+                "DNS_TIMEOUT" => "DNS Request Timed Out",
+                "SERVER_OFFLINE" => "Website Server is Offline - start it in the SERVERS tab",
                 "SERVER_TIMEOUT" => "Website Not Responding",
-                _                => $"Connection Error: {ex.Message}"
+                _ => $"Connection Error: {ex.Message}"
             };
+
             LogService.Add("ERROR", ex.Message, msg);
             ShowError(ex.Message, msg);
         }
@@ -168,41 +182,36 @@
 
     private void ShowError(string code, string message)
     {
-        _statusText  = $"✖  {message}";
-        _statusIcon  = "✖";
+        _statusText = $"ERROR  {message}";
+        _statusIcon = "!";
         _statusClass = "error";
 
-        // Use @"" verbatim string — Razor-safe (no triple-quote raw literals inside .razor)
         _html = @"<!DOCTYPE html>
 <html>
 <head>
 <meta charset='utf-8'>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#05060a;color:#ccd;font-family:Consolas,monospace;
-     display:flex;align-items:center;justify-content:center;min-height:100vh}
-.wrap{border:1px solid #ff414155;padding:52px 72px;text-align:center;
-      box-shadow:0 0 60px #ff41411a;max-width:600px;background:#090b12;
-      position:relative;overflow:hidden}
-.wrap::before{content:'';position:absolute;left:0;top:0;width:3px;height:100%;
-              background:linear-gradient(to bottom,#ff4141,transparent)}
-h1{font-size:1.8rem;color:#ff6a6a;letter-spacing:3px;margin-bottom:14px}
-.code{font-size:.82rem;color:#ff4141;margin-bottom:24px}
-p{color:#4a5e7a;font-size:.88rem;line-height:1.8}
-strong{color:#00e682}
-em{color:#00c8ff;font-style:normal}
-hr{border:none;border-top:1px solid #ff414122;margin:20px 0}
-.footer{font-size:.68rem;color:#1a2a3a;letter-spacing:2px}
+body{background:#ffffff;color:#1a1a1a;font-family:Consolas,monospace;display:flex;align-items:center;justify-content:center;min-height:100vh}
+.wrap{border:1px solid #ff005588;padding:52px 72px;text-align:center;max-width:600px;background:#ffffff;position:relative;overflow:hidden}
+.wrap::before{content:'';position:absolute;left:0;top:0;width:3px;height:100%;background:linear-gradient(to bottom,#ff0055,transparent)}
+h1{font-size:1.8rem;color:#ff0055;letter-spacing:3px;margin-bottom:14px}
+.code{font-size:.82rem;color:#dc2626;margin-bottom:24px}
+p{color:#334155;font-size:.88rem;line-height:1.8}
+strong{color:#111827}
+em{color:#0f172a;font-style:normal}
+hr{border:none;border-top:1px solid #e2e8f0;margin:20px 0}
+.footer{font-size:.68rem;color:#64748b;letter-spacing:2px}
 </style>
 </head>
 <body>
 <div class='wrap'>
-  <h1>&#9888; " + code + @"</h1>
+  <h1>" + code + @"</h1>
   <div class='code'>" + message + @"</div>
   <p>Ensure the required server is <strong>ONLINE</strong> before navigating.<br>
      Open the <em>SERVERS</em> tab to start it.</p>
   <hr>
-  <div class='footer'>CASA &middot; CLIENT AND SERVER ARCHITECTURE</div>
+  <div class='footer'>CASA | CLIENT AND SERVER ARCHITECTURE</div>
 </div>
 </body>
 </html>";

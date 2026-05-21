@@ -4,10 +4,10 @@
 @implements IDisposable
 @inject PacketLogService LogService
 
-<div class="log-panel">
+<div class="log-panel terminal-log">
     <div class="log-header">
-        <span class="log-title">◈ LIVE PACKET CAPTURE</span>
-        <span class="log-hint">UDP = DNS &nbsp;·&nbsp; TCP = HTTP &nbsp;·&nbsp; ERR = Error</span>
+        <span class="log-title">LIVE PACKET TRACER</span>
+        <span class="log-hint">UDP = DNS | TCP = HTTP | ERR = Error</span>
         <button class="btn-clr" @onclick="LogService.Clear">CLR</button>
     </div>
 
@@ -27,11 +27,17 @@
 
 @code {
     protected override void OnInitialized()
-        => LogService.OnChanged += Refresh;
+    {
+        LogService.OnChanged += Refresh;
+    }
 
     private void Refresh()
-        => InvokeAsync(StateHasChanged);
+    {
+        InvokeAsync(StateHasChanged);
+    }
 
     public void Dispose()
-        => LogService.OnChanged -= Refresh;
+    {
+        LogService.OnChanged -= Refresh;
+    }
 }

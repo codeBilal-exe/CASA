@@ -4,17 +4,21 @@
 @using CASA_Client.Models
 @inject ServerControlService ServerControl
 @inject PacketLogService LogService
-@rendermode InteractiveServer
 
-<PageTitle>CASA · Servers</PageTitle>
+<PageTitle>CASA - Servers</PageTitle>
 
 <div class="servers-page">
-
     <div class="servers-header">
         <div class="sh-accent"></div>
         <div class="sh-text">
-            <h1>SERVER CONTROL PANEL</h1>
-            <p>Start / stop individual servers before navigating</p>
+            <h1>Server Control Panel</h1>
+            <p>Start or stop servers before browsing domains.</p>
+        </div>
+        <div class="servers-header-actions">
+            <button class="btn btn-tracer @(_tracerOpen ? "active" : "")"
+                    @onclick="ToggleTracer">
+                Live Tracer
+            </button>
         </div>
     </div>
 
@@ -25,18 +29,25 @@
         }
     </div>
 
-    <div class="servers-log-section">
-        <PacketLogViewer />
-    </div>
-
+    @if (_tracerOpen)
+    {
+        <div class="servers-log-section">
+            <PacketLogViewer />
+        </div>
+    }
 </div>
 
 @code {
+    private bool _tracerOpen;
+
+    private void ToggleTracer() => _tracerOpen = !_tracerOpen;
+
     private void HandleLog(string raw)
     {
-        // raw format: "PROTOCOL|ACTION|MESSAGE"
         var parts = raw.Split('|', 3);
         if (parts.Length == 3)
+        {
             LogService.Add(parts[0], parts[1], parts[2]);
+        }
     }
 }

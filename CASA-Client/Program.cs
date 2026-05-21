@@ -9,6 +9,7 @@ builder.Services.AddRazorComponents()
 builder.Services.AddSingleton<ServerControlService>();
 builder.Services.AddScoped<NetworkingService>();
 builder.Services.AddScoped<PacketLogService>();
+builder.Services.AddScoped<ThemeState>();
 
 var app = builder.Build();
 

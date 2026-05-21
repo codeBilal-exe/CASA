@@ -6,26 +6,27 @@
 <div class="server-card @(Server.IsOnline ? "online" : "offline")">
     <div class="card-rail"></div>
 
-    <div class="card-body">
+    <div class="card-top">
         <div class="card-left">
             <div class="status-dot @(Server.IsOnline ? "pulse" : "")"></div>
             <div class="card-info">
                 <span class="card-name">@Server.Name</span>
-                <span class="card-port">@Server.Protocol &nbsp;·&nbsp; Port @Server.Port</span>
+                <span class="card-port">@Server.Protocol | Port @Server.Port</span>
             </div>
         </div>
 
-        <span class="card-desc">@Server.Description</span>
+        <span class="status-badge @(Server.IsOnline ? "text-green" : "text-red")">
+            @(Server.IsOnline ? "ONLINE" : "OFFLINE")
+        </span>
+    </div>
 
-        <div class="card-right">
-            <span class="status-text @(Server.IsOnline ? "text-green" : "text-red")">
-                @(Server.IsOnline ? "ONLINE" : "OFFLINE")
-            </span>
-            <button class="btn @(Server.IsOnline ? "btn-stop" : "btn-start")"
-                    @onclick="Toggle">
-                @(Server.IsOnline ? "STOP" : "START")
-            </button>
-        </div>
+    <p class="card-desc">@Server.Description</p>
+
+    <div class="card-actions">
+        <button class="btn @(Server.IsOnline ? "btn-stop" : "btn-start")"
+                @onclick="Toggle">
+            @(Server.IsOnline ? "STOP SERVER" : "START SERVER")
+        </button>
     </div>
 
     @if (Server.IsOnline)
@@ -42,6 +43,6 @@
     {
         ServerControl.Toggle(Server);
         string state = Server.IsOnline ? "ONLINE" : "OFFLINE";
-        await OnLog.InvokeAsync($"SYSTEM|{(Server.IsOnline ? "START" : "STOP")}|{Server.Name} → {state}");
+        await OnLog.InvokeAsync($"SYSTEM|{(Server.IsOnline ? "START" : "STOP")}|{Server.Name} -> {state}");
     }
 }

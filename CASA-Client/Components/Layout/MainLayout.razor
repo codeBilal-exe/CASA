@@ -1,7 +1,10 @@
 @inherits LayoutComponentBase
 @namespace CASA_Client.Components.Layout
+@implements IDisposable
+@inject CASA_Client.Services.ThemeState ThemeState
+@inject IJSRuntime JS
 
-<div class="casa-shell">
+<div class="casa-shell" data-theme="@ThemeState.ThemeName">
     <div class="chrome-bar"></div>
 
     <header class="shell-header">
@@ -10,11 +13,29 @@
             <span class="casa-tagline">Client And Server Architecture</span>
             <span class="casa-version">v1.0</span>
         </div>
+        <button class="btn btn-theme-icon"
+                @onclick="ToggleTheme"
+                title="Toggle theme"
+                aria-label="Toggle theme">
+            @if (ThemeState.IsDarkMode)
+            {
+                <svg viewBox="0 0 24 24" class="theme-icon" aria-hidden="true">
+                    <circle cx="12" cy="12" r="4"></circle>
+                    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path>
+                </svg>
+            }
+            else
+            {
+                <svg viewBox="0 0 24 24" class="theme-icon" aria-hidden="true">
+                    <path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"></path>
+                </svg>
+            }
+        </button>
     </header>
 
     <nav class="tab-nav">
-        <NavLink href="/"        Match="NavLinkMatch.All"    class="tab-link">◉ BROWSER</NavLink>
-        <NavLink href="/servers" Match="NavLinkMatch.Prefix" class="tab-link">⚙ SERVERS</NavLink>
+        <NavLink href="/" Match="NavLinkMatch.All" class="tab-link">BROWSER</NavLink>
+        <NavLink href="/servers" Match="NavLinkMatch.Prefix" class="tab-link">SERVERS</NavLink>
     </nav>
     <div class="tab-rail"></div>
 
@@ -22,3 +43,37 @@
         @Body
     </main>
 </div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        ThemeState.OnChange += HandleThemeChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("casaTheme.setTheme", ThemeState.ThemeName);
+        }
+        catch (InvalidOperationException)
+        {
+            // Ignore prerender timing; this succeeds once the interactive circuit is active.
+        }
+    }
+
+    private void ToggleTheme()
+    {
+        ThemeState.Toggle();
+    }
+
+    private void HandleThemeChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        ThemeState.OnChange -= HandleThemeChanged;
+    }
+}
