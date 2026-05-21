@@ -4,6 +4,7 @@
 @using CASA_Client.Models
 @inject NetworkingService Network
 @inject PacketLogService LogService
+@inject CacheService Cache
 
 <PageTitle>CASA - Browser</PageTitle>
 
@@ -48,6 +49,27 @@
             }
         </div>
     </section>
+
+    @if (_servedFromCache && _lastCacheEntry is not null)
+    {
+        <div class="cache-hit-badge">
+            <span class="cache-hit-icon">⚡</span>
+            <span class="cache-hit-text">Served from Cache</span>
+            <span class="cache-hit-meta">
+                Cached @_lastCacheEntry.CachedAt.ToString("HH:mm:ss") ·
+                Hit #@_lastCacheEntry.HitCount ·
+                TTL @((int)_lastCacheEntry.TtlRemaining.TotalSeconds)s remaining
+            </span>
+            <a href="/cache" class="cache-hit-link">View Cache</a>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(_html) && !_servedFromCache)
+    {
+        <div class="cache-stored-badge">
+            <span>💾 Response cached</span>
+            <a href="/cache" class="cache-hit-link">View Cache</a>
+        </div>
+    }
 
     <div class="browser-stage @(_tracerOpen ? "with-tracer" : "")">
         <div class="viewport-wrap">
@@ -98,6 +120,8 @@
     private bool _loading;
     private bool _sourceOpen;
     private bool _tracerOpen;
+    private bool _servedFromCache = false;
+    private CacheEntry? _lastCacheEntry = null;
     private string _statusText = "Ready - enter a domain and press Go";
     private string _statusIcon = "*";
     private string _statusClass = "idle";
@@ -121,18 +145,33 @@
             .Replace("https://", "")
             .TrimEnd('/');
 
-        if (string.IsNullOrEmpty(domain))
-        {
-            return;
-        }
+        if (string.IsNullOrEmpty(domain)) return;
 
         _loading = true;
+        _servedFromCache = false;
+        _lastCacheEntry = null;
         _statusText = $"Resolving {domain} ...";
         _statusIcon = ">";
         _statusClass = "loading";
         StateHasChanged();
 
         LogService.Add("BROWSER", "Navigate", $"User requested: {domain}");
+
+        // ── CACHE CHECK ──────────────────────────────────────────
+        if (Cache.TryGet(domain, out var cached) && cached is not null)
+        {
+            LogService.Add("CACHE", "HIT ⚡", $"Served '{domain}' from cache (hit #{cached.HitCount}) [{cached.SizeBytes} bytes]");
+            _html = cached.HtmlContent;
+            _servedFromCache = true;
+            _lastCacheEntry = cached;
+            _statusText = $"⚡ CACHE HIT  {domain}  [{cached.SizeBytes} bytes]  (hit #{cached.HitCount})";
+            _statusIcon = "⚡";
+            _statusClass = "ok";
+            _loading = false;
+            StateHasChanged();
+            return;
+        }
+        // ── END CACHE CHECK ──────────────────────────────────────
 
         try
         {
@@ -154,6 +193,11 @@
             string html = await Network.FetchPageAsync(ip, port);
             LogService.Add("TCP", "<- ACK", $"HTML received ({html.Length} bytes)");
 
+            // ── CACHE STORE ──────────────────────────────────────
+            Cache.Set(domain, ip, port, html);
+            LogService.Add("CACHE", "STORE 💾", $"Cached '{domain}' -> {ip}:{port} [{html.Length} bytes] TTL={Cache.DefaultTtlMinutes}min");
+            // ── END CACHE STORE ──────────────────────────────────
+
             _html = html;
             _statusText = $"OK  {domain}  [{html.Length} bytes]";
             _statusIcon = "+";
@@ -163,11 +207,11 @@
         {
             string msg = ex.Message switch
             {
-                "DNS_OFFLINE" => "DNS Server is Offline - start it in the SERVERS tab",
-                "DNS_TIMEOUT" => "DNS Request Timed Out",
-                "SERVER_OFFLINE" => "Website Server is Offline - start it in the SERVERS tab",
-                "SERVER_TIMEOUT" => "Website Not Responding",
-                _ => $"Connection Error: {ex.Message}"
+                "DNS_OFFLINE"     => "DNS Server is Offline - start it in the SERVERS tab",
+                "DNS_TIMEOUT"     => "DNS Request Timed Out",
+                "SERVER_OFFLINE"  => "Website Server is Offline - start it in the SERVERS tab",
+                "SERVER_TIMEOUT"  => "Website Not Responding",
+                _                 => $"Connection Error: {ex.Message}"
             };
 
             LogService.Add("ERROR", ex.Message, msg);

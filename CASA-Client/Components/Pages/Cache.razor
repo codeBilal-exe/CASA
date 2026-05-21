@@ -1,0 +1,174 @@
+@page "/cache"
+@namespace CASA_Client.Components.Pages
+@using CASA_Client.Services
+@using CASA_Client.Models
+@inject CacheService CacheSvc
+@implements IDisposable
+
+<PageTitle>CASA - Cache</PageTitle>
+
+<div class="cache-page">
+
+    <div class="servers-header">
+        <div class="sh-accent"></div>
+        <div class="sh-text">
+            <h1>Cache Manager</h1>
+            <p>DNS + response buffer — serves repeat requests instantly without hitting servers.</p>
+        </div>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="cache-stats-bar">
+        <div class="cache-stat">
+            <span class="cs-value">@_entries.Count</span>
+            <span class="cs-label">Cached URLs</span>
+        </div>
+        <div class="cache-stat">
+            <span class="cs-value">@CacheSvc.TotalHits</span>
+            <span class="cs-label">Total Hits</span>
+        </div>
+        <div class="cache-stat">
+            <span class="cs-value">@FormatBytes(CacheSvc.TotalSizeBytes)</span>
+            <span class="cs-label">Cache Size</span>
+        </div>
+        <div class="cache-stat">
+            <span class="cs-value cs-@(CacheSvc.IsEnabled ? "online" : "offline")">
+                @(CacheSvc.IsEnabled ? "ACTIVE" : "DISABLED")
+            </span>
+            <span class="cs-label">Status</span>
+        </div>
+    </div>
+
+    <!-- Settings Panel -->
+    <div class="cache-settings-panel">
+        <div class="csp-row">
+            <label class="csp-label">Cache Enabled</label>
+            <button class="btn @(CacheSvc.IsEnabled ? "btn-stop" : "btn-start") btn-sm"
+                    @onclick="ToggleEnabled">
+                @(CacheSvc.IsEnabled ? "DISABLE" : "ENABLE")
+            </button>
+        </div>
+        <div class="csp-row">
+            <label class="csp-label">Default TTL (minutes)</label>
+            <input class="csp-input" type="number" min="1" max="60"
+                   @bind="_ttlInput" @bind:event="oninput" />
+            <button class="btn btn-go btn-sm" @onclick="ApplyTtl">Apply</button>
+        </div>
+        <div class="csp-row">
+            <label class="csp-label">Auto-clear when server stops</label>
+            <button class="btn @(CacheSvc.AutoClearOnServerStop ? "btn-stop" : "btn-start") btn-sm"
+                    @onclick="ToggleAutoClear">
+                @(CacheSvc.AutoClearOnServerStop ? "ON" : "OFF")
+            </button>
+        </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="cache-toolbar">
+        <button class="btn btn-ghost" @onclick="Refresh">↻ Refresh</button>
+        @if (_entries.Count > 0)
+        {
+            <button class="btn btn-stop" @onclick="ConfirmClear">🗑 Clear All Cache</button>
+        }
+        @if (_confirmClear)
+        {
+            <span class="confirm-prompt">
+                Are you sure?
+                <button class="btn btn-stop btn-sm" @onclick="DoClear">Yes, clear all</button>
+                <button class="btn btn-ghost btn-sm" @onclick="() => _confirmClear = false">Cancel</button>
+            </span>
+        }
+    </div>
+
+    <!-- Cache Table -->
+    @if (_entries.Count == 0)
+    {
+        <div class="cache-empty">
+            <div class="empty-icon">Cache is Empty</div>
+            <div class="empty-text">Visit a website in the Browser tab — it will be cached here automatically.</div>
+            <div class="empty-hint">Try: apple.com | google.com | github.com</div>
+        </div>
+    }
+    else
+    {
+        <div class="cache-table-wrap">
+            <table class="cache-table">
+                <thead>
+                    <tr>
+                        <th>URL</th>
+                        <th>Resolved IP</th>
+                        <th>Port</th>
+                        <th>Cached At</th>
+                        <th>TTL Remaining</th>
+                        <th>Hits</th>
+                        <th>Size</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var entry in _entries)
+                    {
+                        <tr>
+                            <td class="ct-url">@entry.Url</td>
+                            <td class="ct-mono">@entry.ResolvedIp</td>
+                            <td class="ct-mono">@entry.Port</td>
+                            <td class="ct-mono">@entry.CachedAt.ToString("HH:mm:ss")</td>
+                            <td>
+                                <span class="ttl-badge @TtlClass(entry)">
+                                    @((int)entry.TtlRemaining.TotalSeconds)s
+                                </span>
+                            </td>
+                            <td class="ct-mono">@entry.HitCount</td>
+                            <td class="ct-mono">@FormatBytes(entry.SizeBytes)</td>
+                            <td>
+                                <button class="btn btn-stop btn-sm"
+                                        @onclick="() => RemoveEntry(entry.Url)">
+                                    Remove
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@code {
+    private List<CacheEntry> _entries = new();
+    private int _ttlInput = 5;
+    private bool _confirmClear = false;
+
+    protected override void OnInitialized()
+    {
+        _ttlInput = CacheSvc.DefaultTtlMinutes;
+        Refresh();
+        CacheSvc.OnChanged += HandleChanged;
+    }
+
+    private void HandleChanged() => InvokeAsync(() => { Refresh(); StateHasChanged(); });
+
+    private void Refresh() => _entries = CacheSvc.GetAll();
+
+    private void ToggleEnabled() { CacheSvc.SetEnabled(!CacheSvc.IsEnabled); Refresh(); }
+    private void ToggleAutoClear() { CacheSvc.SetAutoClear(!CacheSvc.AutoClearOnServerStop); }
+    private void ApplyTtl() { CacheSvc.SetTtl(_ttlInput); }
+    private void RemoveEntry(string url) { CacheSvc.Remove(url); Refresh(); }
+    private void ConfirmClear() => _confirmClear = true;
+    private void DoClear() { CacheSvc.Clear(); _confirmClear = false; Refresh(); }
+
+    private static string FormatBytes(long bytes) => bytes switch
+    {
+        < 1024 => $"{bytes} B",
+        < 1024 * 1024 => $"{bytes / 1024.0:F1} KB",
+        _ => $"{bytes / (1024.0 * 1024):F2} MB"
+    };
+
+    private static string TtlClass(CacheEntry e)
+    {
+        int secs = (int)e.TtlRemaining.TotalSeconds;
+        return secs > 180 ? "ttl-green" : secs > 60 ? "ttl-yellow" : "ttl-red";
+    }
+
+    public void Dispose() => CacheSvc.OnChanged -= HandleChanged;
+}

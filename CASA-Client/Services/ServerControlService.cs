@@ -6,6 +6,7 @@ namespace CASA_Client.Services;
 public class ServerControlService : IDisposable
 {
     private readonly Dictionary<string, Process> _processes = new();
+    private readonly CacheService _cache;
 
     // Base path: root of the CASA project (4 levels up from Browser/bin/Debug/net8.0)
     private readonly string _basePath =
@@ -20,6 +21,11 @@ public class ServerControlService : IDisposable
     };
 
     public event Action? OnChanged;
+
+    public ServerControlService(CacheService cache)
+    {
+        _cache = cache;
+    }
 
     public void Toggle(ServerInfo server)
     {
@@ -60,6 +66,7 @@ public class ServerControlService : IDisposable
             _processes.Remove(server.Name);
         }
         server.IsOnline = false;
+        _cache.ClearByPort(server.Port);
         OnChanged?.Invoke();
     }
 

@@ -7,6 +7,7 @@ builder.Services.AddRazorComponents()
 
 // Project services
 builder.Services.AddSingleton<ServerControlService>();
+builder.Services.AddSingleton<CacheService>();
 builder.Services.AddScoped<NetworkingService>();
 builder.Services.AddScoped<PacketLogService>();
 builder.Services.AddScoped<ThemeState>();
