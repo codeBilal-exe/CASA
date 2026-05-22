@@ -1,8 +1,11 @@
 # Visual Studio / .NET
+.vs/
+**/.vs/
 bin/
 obj/
 *.user
 *.suo
+*.rsuser
 *.sln.docstates
 
 # C/C++ / Build Artifacts

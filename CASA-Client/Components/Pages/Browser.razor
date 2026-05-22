@@ -54,11 +54,11 @@
     @if (_servedFromCache && _lastCacheEntry is not null)
     {
         <div class="cache-hit-badge">
-            <span class="cache-hit-icon">⚡</span>
+            <span class="cache-hit-icon">CACHE</span>
             <span class="cache-hit-text">Served from Cache</span>
             <span class="cache-hit-meta">
-                Cached @_lastCacheEntry.CachedAt.ToString("HH:mm:ss") ·
-                Hit #@_lastCacheEntry.HitCount ·
+                Cached @_lastCacheEntry.CachedAt.ToString("HH:mm:ss") |
+                Hit #@_lastCacheEntry.HitCount |
                 TTL @((int)_lastCacheEntry.TtlRemaining.TotalSeconds)s remaining
             </span>
             <a href="/cache" class="cache-hit-link">View Cache</a>
@@ -67,7 +67,7 @@
     else if (!string.IsNullOrEmpty(_html) && !_servedFromCache)
     {
         <div class="cache-stored-badge">
-            <span>💾 Response cached</span>
+            <span>Response cached</span>
             <a href="/cache" class="cache-hit-link">View Cache</a>
         </div>
     }
@@ -91,7 +91,7 @@
                             </div>
                             <div class="empty-headline">Web Viewport</div>
                             <div class="empty-text">Enter a domain above and press Go</div>
-                            <div class="empty-hint">Try: apple.com · google.com · github.com</div>
+                            <div class="empty-hint">Try: apple.com, google.com, github.com</div>
                         </div>
                     }
                 </div>
@@ -164,34 +164,25 @@
 
         var sw = Stopwatch.StartNew();
 
-        // ── CACHE CHECK ──────────────────────────────────────────
+        // Cache check
         if (Cache.TryGet(domain, out var cached) && cached is not null)
         {
-<<<<<<< HEAD
-            sw.Stop();
-            LogService.Add("CACHE", "HIT ⚡", $"Served '{domain}' from cache (hit #{cached.HitCount}) [{cached.SizeBytes} bytes]", sw.Elapsed.TotalMilliseconds);
-            _html = cached.HtmlContent;
-            _servedFromCache = true;
-            _lastCacheEntry = cached;
-            _statusText = $"⚡ CACHE HIT  {domain}  [{cached.SizeBytes} bytes]  (hit #{cached.HitCount})  {sw.Elapsed.TotalMilliseconds:F1}ms";
-=======
             _sw.Stop();
             double msCache = _sw.Elapsed.TotalMilliseconds;
-            LogService.Add("CACHE", "HIT ⚡",
+            LogService.Add("CACHE", "HIT",
                 $"Served '{domain}' from cache (hit #{cached.HitCount}) " +
-                $"[{cached.SizeBytes} bytes] — ⚡ {msCache:F2} ms  (no network)");
+                $"[{cached.SizeBytes} bytes] - {msCache:F2} ms (no network)");
             _html = cached.HtmlContent;
             _servedFromCache = true;
             _lastCacheEntry = cached;
-            _statusText = $"⚡ CACHE HIT  {domain}  [{cached.SizeBytes} bytes]  (hit #{cached.HitCount})  — {msCache:F2} ms";
->>>>>>> cae332eb8af764689943123689ad2119219c3fda
-            _statusIcon = "⚡";
+            _statusText = $"CACHE HIT {domain} [{cached.SizeBytes} bytes] (hit #{cached.HitCount}) {msCache:F2} ms";
+            _statusIcon = "*";
             _statusClass = "ok";
             _loading = false;
             StateHasChanged();
             return;
         }
-        // ── END CACHE CHECK ──────────────────────────────────────
+        // End cache check
 
         try
         {
@@ -218,14 +209,14 @@
             LogService.Add("TCP", "<- ACK", $"HTML received ({html.Length} bytes)", httpTimer.Elapsed.TotalMilliseconds);
 
             sw.Stop();
-            // ── CACHE STORE ──────────────────────────────────────
+            // Cache store
             Cache.Set(domain, ip, port, html);
             _sw.Stop();
             double msTotal = _sw.Elapsed.TotalMilliseconds;
-            LogService.Add("CACHE", "STORE 💾",
+            LogService.Add("CACHE", "STORE",
                 $"Cached '{domain}' -> {ip}:{port} [{html.Length} bytes] " +
-                $"TTL={Cache.DefaultTtlMinutes}min — 🌐 {msTotal:F2} ms  (full network round-trip)");
-            // ── END CACHE STORE ──────────────────────────────────
+                $"TTL={Cache.DefaultTtlMinutes}min - {msTotal:F2} ms (full network round-trip)");
+            // End cache store
 
             _html = html;
             _statusText = $"OK  {domain}  [{html.Length} bytes]  ({msTotal:F2} ms)";
