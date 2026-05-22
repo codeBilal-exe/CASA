@@ -146,6 +146,7 @@
             .TrimEnd('/');
 
         if (string.IsNullOrEmpty(domain)) return;
+        var _sw = System.Diagnostics.Stopwatch.StartNew();
 
         _loading = true;
         _servedFromCache = false;
@@ -160,11 +161,15 @@
         // ── CACHE CHECK ──────────────────────────────────────────
         if (Cache.TryGet(domain, out var cached) && cached is not null)
         {
-            LogService.Add("CACHE", "HIT ⚡", $"Served '{domain}' from cache (hit #{cached.HitCount}) [{cached.SizeBytes} bytes]");
+            _sw.Stop();
+            double msCache = _sw.Elapsed.TotalMilliseconds;
+            LogService.Add("CACHE", "HIT ⚡",
+                $"Served '{domain}' from cache (hit #{cached.HitCount}) " +
+                $"[{cached.SizeBytes} bytes] — ⚡ {msCache:F2} ms  (no network)");
             _html = cached.HtmlContent;
             _servedFromCache = true;
             _lastCacheEntry = cached;
-            _statusText = $"⚡ CACHE HIT  {domain}  [{cached.SizeBytes} bytes]  (hit #{cached.HitCount})";
+            _statusText = $"⚡ CACHE HIT  {domain}  [{cached.SizeBytes} bytes]  (hit #{cached.HitCount})  — {msCache:F2} ms";
             _statusIcon = "⚡";
             _statusClass = "ok";
             _loading = false;
@@ -195,11 +200,15 @@
 
             // ── CACHE STORE ──────────────────────────────────────
             Cache.Set(domain, ip, port, html);
-            LogService.Add("CACHE", "STORE 💾", $"Cached '{domain}' -> {ip}:{port} [{html.Length} bytes] TTL={Cache.DefaultTtlMinutes}min");
+            _sw.Stop();
+            double msTotal = _sw.Elapsed.TotalMilliseconds;
+            LogService.Add("CACHE", "STORE 💾",
+                $"Cached '{domain}' -> {ip}:{port} [{html.Length} bytes] " +
+                $"TTL={Cache.DefaultTtlMinutes}min — 🌐 {msTotal:F2} ms  (full network round-trip)");
             // ── END CACHE STORE ──────────────────────────────────
 
             _html = html;
-            _statusText = $"OK  {domain}  [{html.Length} bytes]";
+            _statusText = $"OK  {domain}  [{html.Length} bytes]  ({msTotal:F2} ms)";
             _statusIcon = "+";
             _statusClass = "ok";
         }
