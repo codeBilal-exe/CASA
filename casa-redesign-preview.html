@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CASA — Client And Server Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════════ */
+:root {
+  --clay:        #C4785A;
+  --clay-light:  #E8A98A;
+  --clay-pale:   #F5E8DF;
+  --slate:       #2E3A4A;
+  --slate-mid:   #4A5968;
+  --slate-light: #8A9BAA;
+  --cream:       #FAF7F2;
+  --parchment:   #F0E8DC;
+  --linen:       #E8DDD0;
+  --ink:         #1C2530;
+  --jade:        #4A8C6E;
+  --jade-pale:   #D4EDE3;
+  --rust:        #B85040;
+  --rust-pale:   #F0DBD6;
+  --amber:       #C49030;
+  --amber-pale:  #F5EAC8;
+
+  --bg:          var(--cream);
+  --surface:     #FFFFFF;
+  --surface-alt: var(--parchment);
+  --text-primary:   var(--ink);
+  --text-secondary: var(--slate-mid);
+  --text-muted:     var(--slate-light);
+  --border:      var(--linen);
+  --border-strong: #C8BDB0;
+
+  --font-display: "DM Serif Display", Georgia, serif;
+  --font-body:    "Instrument Sans", "Segoe UI", sans-serif;
+  --font-mono:    "DM Mono", Consolas, monospace;
+
+  --r-sm: 6px; --r-md: 10px; --r-lg: 16px; --r-xl: 22px;
+  --shadow-sm: 0 1px 4px rgba(28,37,48,.06), 0 0 0 0.5px rgba(28,37,48,.06);
+  --shadow-md: 0 4px 16px rgba(28,37,48,.08), 0 0 0 0.5px rgba(28,37,48,.06);
+  --shadow-lg: 0 12px 40px rgba(28,37,48,.1), 0 0 0 0.5px rgba(28,37,48,.06);
+  --t: 200ms cubic-bezier(.4,0,.2,1);
+}
+[data-theme="dark"] {
+  --bg: #1E2530; --surface: #283040; --surface-alt: #222C3A;
+  --text-primary: #F0EAE0; --text-secondary: #A0ADB8; --text-muted: #647280;
+  --border: #384454; --border-strong: #4A5868;
+  --clay: #D4886A; --clay-light: #E8A88A; --clay-pale: rgba(196,120,90,.15);
+  --jade-pale: rgba(74,140,110,.18); --rust-pale: rgba(184,80,64,.18);
+  --amber-pale: rgba(196,144,48,.18); --linen: #384454;
+  --shadow-sm: 0 1px 4px rgba(0,0,0,.25), 0 0 0 .5px rgba(255,255,255,.04);
+  --shadow-md: 0 4px 16px rgba(0,0,0,.35), 0 0 0 .5px rgba(255,255,255,.04);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,.5), 0 0 0 .5px rgba(255,255,255,.04);
+}
+
+/* ─── RESET ─── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:var(--font-body);font-size:14px;color:var(--text-primary);background:var(--bg);-webkit-font-smoothing:antialiased;line-height:1.5}
+
+/* ─── SHELL ─── */
+.casa-shell{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+
+.chrome-bar{height:2px;flex-shrink:0;background:linear-gradient(90deg,var(--clay) 0%,var(--clay-light) 30%,var(--amber) 60%,var(--jade) 100%);background-size:300% 100%;animation:bar-shift 8s linear infinite}
+@keyframes bar-shift{0%{background-position:0% 0%}100%{background-position:300% 0%}}
+
+.shell-header{flex-shrink:0;display:flex;align-items:center;gap:16px;padding:0 24px;height:56px;background:var(--surface);border-bottom:1px solid var(--border);position:relative;z-index:50}
+.casa-logo-img{width:36px;height:36px;object-fit:contain;flex-shrink:0}
+
+/* SVG logo inline */
+.logo-svg{width:36px;height:36px;flex-shrink:0}
+
+.header-wordmark{display:flex;flex-direction:column;gap:1px;flex:1}
+.casa-name{font-family:var(--font-display);font-size:17px;color:var(--text-primary);letter-spacing:.02em;line-height:1}
+.casa-tagline{font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted)}
+
+.header-controls{display:flex;align-items:center;gap:8px}
+
+.btn-theme-icon{width:34px;height:34px;border-radius:50%;border:1px solid var(--border);background:var(--surface-alt);color:var(--text-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all var(--t)}
+.btn-theme-icon:hover{border-color:var(--clay);color:var(--clay);transform:rotate(20deg)}
+.theme-icon{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+.tab-nav{flex-shrink:0;display:flex;align-items:stretch;padding:0 24px;background:var(--surface);border-bottom:1px solid var(--border);height:40px}
+.tab-link{position:relative;font-family:var(--font-body);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;color:var(--text-muted);padding:0 16px;display:flex;align-items:center;border:none;background:transparent;cursor:pointer;transition:color var(--t);white-space:nowrap}
+.tab-link::after{content:'';position:absolute;bottom:0;left:16px;right:16px;height:2px;background:var(--clay);border-radius:2px 2px 0 0;transform:scaleX(0);transition:transform var(--t)}
+.tab-link:hover{color:var(--text-primary)}
+.tab-link.active{color:var(--clay)}
+.tab-link.active::after{transform:scaleX(1)}
+
+.shell-body{flex:1;min-height:0;overflow:hidden}
+
+/* ─── PAGE TRANSITIONS ─── */
+@keyframes page-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.page{display:none;height:100%;animation:page-in 300ms cubic-bezier(.4,0,.2,1) both}
+.page.active{display:flex;flex-direction:column}
+
+/* ─── BUTTONS ─── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--r-md);font-family:var(--font-body);font-size:12px;font-weight:600;letter-spacing:.04em;cursor:pointer;transition:all var(--t);border:1px solid transparent;white-space:nowrap;text-decoration:none;line-height:1}
+.btn-go{background:var(--clay);color:#fff;border-color:var(--clay)}
+.btn-go:hover{background:var(--rust);border-color:var(--rust);transform:translateY(-1px);box-shadow:0 4px 12px rgba(196,120,90,.35)}
+.btn-go:disabled{opacity:.55;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-ghost{background:transparent;color:var(--text-secondary);border-color:var(--border)}
+.btn-ghost:hover{background:var(--surface-alt);color:var(--text-primary);border-color:var(--border-strong)}
+.btn-ghost.active{background:var(--clay-pale);color:var(--clay);border-color:var(--clay-light)}
+.btn-tracer{background:transparent;color:var(--text-secondary);border-color:var(--border)}
+.btn-tracer:hover,.btn-tracer.active{background:var(--amber-pale);color:var(--amber);border-color:var(--amber)}
+.btn-start{background:var(--jade-pale);color:var(--jade);border-color:var(--jade)}
+.btn-start:hover{background:var(--jade);color:#fff;transform:translateY(-1px);box-shadow:0 4px 12px rgba(74,140,110,.3)}
+.btn-stop{background:var(--rust-pale);color:var(--rust);border-color:var(--rust)}
+.btn-stop:hover{background:var(--rust);color:#fff;transform:translateY(-1px)}
+.btn-start-all{background:var(--jade);color:#fff;border-color:var(--jade)}
+.btn-start-all:hover{background:#3a7a5e;transform:translateY(-1px);box-shadow:0 4px 12px rgba(74,140,110,.35)}
+.btn-stop-all{background:transparent;color:var(--rust);border-color:var(--rust)}
+.btn-stop-all:hover{background:var(--rust);color:#fff;transform:translateY(-1px)}
+.btn-sm{padding:5px 10px;font-size:11px}
+
+/* ═══ BROWSER PAGE ═══ */
+.browser-page{flex-direction:column;overflow:hidden}
+
+.browser-toolbar{flex-shrink:0;background:var(--surface);border-bottom:1px solid var(--border);padding:10px 16px 0}
+.address-bar-wrap{display:flex;align-items:center;gap:10px;padding-bottom:10px}
+.ab-label{font-family:var(--font-mono);font-size:12px;color:var(--text-muted);padding:8px 2px;white-space:nowrap}
+.address-input{flex:1;height:36px;padding:0 14px;border-radius:var(--r-md);border:1px solid var(--border);background:var(--surface-alt);color:var(--text-primary);font-family:var(--font-mono);font-size:13px;outline:none;transition:all var(--t);min-width:0}
+.address-input:focus{border-color:var(--clay);background:var(--surface);box-shadow:0 0 0 3px rgba(196,120,90,.12)}
+.address-input::placeholder{color:var(--text-muted)}
+.browser-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
+
+.status-strip{display:flex;align-items:center;gap:8px;padding:5px 2px 8px;min-height:26px}
+.status-icon{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;font-family:var(--font-mono);flex-shrink:0;transition:all var(--t)}
+.status-icon.idle{background:var(--surface-alt);color:var(--text-muted)}
+.status-icon.loading{background:var(--amber-pale);color:var(--amber);animation:pulse 1s ease-in-out infinite}
+.status-icon.ok{background:var(--jade-pale);color:var(--jade)}
+.status-icon.error{background:var(--rust-pale);color:var(--rust)}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.15);opacity:.8}}
+.status-text{font-family:var(--font-mono);font-size:11px;color:var(--text-muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.status-loader{display:inline-block;width:14px;height:14px;border:1.5px solid var(--border);border-top-color:var(--clay);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.cache-hit-badge,.cache-stored-badge{display:flex;align-items:center;gap:10px;margin:6px 16px 0;padding:7px 14px;border-radius:var(--r-md);font-size:11px;animation:badge-in 200ms ease both;flex-shrink:0}
+@keyframes badge-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.cache-hit-badge{background:var(--jade-pale);border:1px solid rgba(74,140,110,.3)}
+.cache-stored-badge{background:var(--amber-pale);border:1px solid rgba(196,144,48,.3);font-family:var(--font-mono);color:var(--text-secondary)}
+.cache-hit-text{font-family:var(--font-mono);font-weight:500;color:var(--jade)}
+.cache-hit-meta{font-family:var(--font-mono);color:var(--text-muted);flex:1}
+.cache-hit-link{color:var(--clay);text-decoration:none;font-weight:600}
+.cache-hit-link:hover{text-decoration:underline}
+
+.browser-stage{flex:1;min-height:0;display:flex;overflow:hidden;margin-top:8px}
+.viewport-wrap{flex:1;min-width:0;display:flex;gap:10px;padding:0 16px 12px;overflow:hidden}
+.viewport{flex:1;min-width:0;display:flex;flex-direction:column}
+.viewport-frame{flex:1;min-height:0;border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--border);background:var(--surface);box-shadow:var(--shadow-md);position:relative}
+.viewport-frame::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--clay),var(--amber));z-index:1;border-radius:var(--r-lg) var(--r-lg) 0 0;pointer-events:none}
+.render-frame{width:100%;height:100%;border:none;display:block}
+
+.viewport-empty{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:40px}
+.empty-icon-wrap{width:64px;height:64px;border-radius:50%;background:var(--surface-alt);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin-bottom:4px}
+.empty-icon-wrap svg{width:28px;height:28px;stroke:var(--text-muted);fill:none;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round}
+.empty-headline{font-family:var(--font-display);font-size:20px;color:var(--text-muted);font-style:italic}
+.empty-text{font-size:13px;color:var(--text-secondary);text-align:center}
+.empty-hint{font-family:var(--font-mono);font-size:11px;color:var(--text-muted);background:var(--surface-alt);padding:6px 14px;border-radius:var(--r-md);border:1px solid var(--border)}
+
+.source-panel{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow-md);animation:panel-in 200ms ease both}
+@keyframes panel-in{from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:translateX(0)}}
+.source-header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--ink);color:var(--clay-light);font-family:var(--font-mono);font-size:10px;font-weight:500;letter-spacing:.1em;flex-shrink:0}
+.source-bytes{color:var(--slate-light)}
+.source-body{flex:1;overflow:auto;padding:14px 16px;background:#0F1520}
+.source-body code{font-family:var(--font-mono);font-size:11px;line-height:1.7;color:#A8B8C8;white-space:pre-wrap;word-break:break-all}
+
+.tracer-drawer{width:360px;flex-shrink:0;display:flex;flex-direction:column;border-left:1px solid var(--border);background:var(--surface);overflow:hidden}
+
+/* ═══ LOG PANEL ═══ */
+.log-panel{display:flex;flex-direction:column;height:100%;background:#0F1520;overflow:hidden}
+.log-header{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#0A0F18;border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0}
+.log-title{font-family:var(--font-mono);font-size:10px;font-weight:500;letter-spacing:.12em;color:var(--clay-light)}
+.log-hint{font-family:var(--font-mono);font-size:10px;color:#4A5868;flex:1}
+.btn-clr{font-family:var(--font-mono);font-size:10px;font-weight:500;padding:4px 10px;border-radius:var(--r-sm);border:1px solid rgba(196,120,90,.3);background:rgba(196,120,90,.1);color:var(--clay-light);cursor:pointer;transition:all var(--t)}
+.btn-clr:hover{background:var(--clay);color:#fff;border-color:var(--clay)}
+.log-body{flex:1;overflow-y:auto;padding:6px 0}
+.log-row{display:flex;align-items:center;gap:6px;padding:3px 14px;font-family:var(--font-mono);font-size:10.5px;line-height:1.4;transition:background 100ms}
+.log-row:hover{background:rgba(255,255,255,.03)}
+.log-bar{width:2px;height:14px;border-radius:1px;flex-shrink:0}
+.log-row.udp .log-bar{background:#7B8FD4}
+.log-row.tcp .log-bar{background:var(--clay)}
+.log-row.browser .log-bar{background:var(--jade)}
+.log-row.cache .log-bar{background:var(--amber)}
+.log-row.system .log-bar{background:#9A9AB8}
+.log-row.error .log-bar{background:var(--rust)}
+.log-ts{color:#3A4858;font-size:10px}
+.log-proto{color:#6A7A8A;min-width:52px}
+.log-action{color:#7A8A9A;min-width:68px}
+.log-elapsed{color:var(--amber);min-width:48px;text-align:right}
+.log-msg{color:#8A9AAA;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.log-row.error .log-msg{color:#D08080}
+.log-row.cache .log-action{color:var(--amber)}
+.log-row.tcp .log-proto{color:var(--clay-light)}
+.log-row.udp .log-proto{color:#9AAAE0}
+
+/* ═══ SERVERS PAGE ═══ */
+.servers-page{overflow-y:auto;padding:20px 20px 24px;gap:20px}
+
+.servers-header{display:flex;align-items:center;gap:16px;padding:18px 22px;background:var(--surface);border-radius:var(--r-xl);border:1px solid var(--border);box-shadow:var(--shadow-sm);flex-shrink:0}
+.sh-accent{width:4px;height:40px;border-radius:2px;background:linear-gradient(to bottom,var(--clay),var(--amber));flex-shrink:0}
+.sh-text{flex:1;min-width:0}
+.sh-text h1{font-family:var(--font-display);font-size:22px;color:var(--text-primary);line-height:1.1;letter-spacing:.01em}
+.sh-text p{font-size:12px;color:var(--text-muted);margin-top:3px}
+.servers-header-actions{display:flex;align-items:center;gap:8px}
+
+.servers-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+
+.server-card{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:20px;overflow:hidden;transition:all var(--t);box-shadow:var(--shadow-sm);animation:card-in 300ms cubic-bezier(.4,0,.2,1) both}
+@keyframes card-in{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+.server-card:nth-child(1){animation-delay:0ms}
+.server-card:nth-child(2){animation-delay:60ms}
+.server-card:nth-child(3){animation-delay:120ms}
+.server-card:nth-child(4){animation-delay:180ms}
+.server-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+.server-card.online{border-color:rgba(74,140,110,.35)}
+
+.card-rail{position:absolute;top:0;left:0;width:3px;height:100%;border-radius:3px 0 0 3px;transition:background var(--t)}
+.server-card.online .card-rail{background:linear-gradient(to bottom,var(--jade),rgba(74,140,110,.3))}
+.server-card.offline .card-rail{background:var(--border)}
+
+.card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.card-left{display:flex;align-items:center;gap:10px}
+
+.status-dot{width:9px;height:9px;border-radius:50%;background:var(--border-strong);flex-shrink:0;transition:background var(--t)}
+.server-card.online .status-dot{background:var(--jade)}
+.status-dot.pulse{animation:dot-pulse 2s ease-in-out infinite;box-shadow:0 0 0 0 rgba(74,140,110,.4)}
+@keyframes dot-pulse{0%{box-shadow:0 0 0 0 rgba(74,140,110,.4)}70%{box-shadow:0 0 0 6px rgba(74,140,110,0)}100%{box-shadow:0 0 0 0 rgba(74,140,110,0)}}
+
+.card-info{display:flex;flex-direction:column;gap:2px}
+.card-name{font-weight:600;font-size:14px;color:var(--text-primary)}
+.card-port{font-family:var(--font-mono);font-size:11px;color:var(--text-muted)}
+
+.status-badge{font-family:var(--font-mono);font-size:10px;font-weight:500;letter-spacing:.08em;padding:4px 9px;border-radius:var(--r-sm)}
+.text-green{background:var(--jade-pale);color:var(--jade);border:1px solid rgba(74,140,110,.3)}
+.text-red{background:var(--rust-pale);color:var(--rust);border:1px solid rgba(184,80,64,.25)}
+
+.card-desc{font-size:12px;color:var(--text-muted);line-height:1.5;margin-bottom:14px}
+.card-actions{display:flex;gap:8px}
+
+.card-glow-bar{position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--jade),transparent);opacity:.6;animation:glow-slide 2.5s ease-in-out infinite}
+@keyframes glow-slide{0%,100%{opacity:.3}50%{opacity:.8}}
+
+.servers-log-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;height:260px;flex-shrink:0;box-shadow:var(--shadow-md)}
+
+/* ═══ CACHE PAGE ═══ */
+.cache-page{overflow-y:auto;padding:20px 20px 24px;gap:16px}
+
+.cache-stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;flex-shrink:0}
+.cache-stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px 18px;display:flex;flex-direction:column;gap:4px;box-shadow:var(--shadow-sm);position:relative;overflow:hidden;animation:stat-in 400ms cubic-bezier(.4,0,.2,1) both}
+.cache-stat:nth-child(1){animation-delay:0ms}
+.cache-stat:nth-child(2){animation-delay:60ms}
+.cache-stat:nth-child(3){animation-delay:120ms}
+.cache-stat:nth-child(4){animation-delay:180ms}
+@keyframes stat-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.cache-stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--clay);opacity:.5}
+.cs-value{font-family:var(--font-mono);font-size:24px;font-weight:500;color:var(--text-primary);line-height:1}
+.cs-label{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted)}
+.cs-online{color:var(--jade)}
+.cs-offline{color:var(--rust)}
+
+.cache-settings-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px 20px;display:flex;flex-direction:column;gap:12px;box-shadow:var(--shadow-sm);flex-shrink:0}
+.csp-row{display:flex;align-items:center;gap:12px}
+.csp-label{font-size:13px;color:var(--text-secondary);flex:1}
+.csp-input{width:72px;height:32px;padding:0 10px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface-alt);color:var(--text-primary);font-family:var(--font-mono);font-size:13px;outline:none;transition:all var(--t)}
+.csp-input:focus{border-color:var(--clay);box-shadow:0 0 0 3px rgba(196,120,90,.12)}
+
+.cache-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex-shrink:0}
+.confirm-prompt{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--rust);font-weight:600;padding:6px 12px;background:var(--rust-pale);border-radius:var(--r-md);border:1px solid rgba(184,80,64,.2);animation:badge-in 150ms ease both}
+
+.cache-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:60px 0}
+
+.cache-table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow-md);flex-shrink:0}
+.cache-table{width:100%;border-collapse:collapse;font-size:12px}
+.cache-table thead tr{background:var(--ink)}
+.cache-table th{padding:10px 14px;text-align:left;font-family:var(--font-mono);font-size:9.5px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--clay-light);white-space:nowrap}
+.cache-table td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text-primary);vertical-align:middle}
+.cache-table tbody tr{transition:background var(--t)}
+.cache-table tbody tr:hover{background:var(--surface-alt)}
+.cache-table tbody tr:last-child td{border-bottom:none}
+.ct-url{font-family:var(--font-mono);font-weight:500;color:var(--clay)}
+.ct-mono{font-family:var(--font-mono);font-size:11px;color:var(--text-muted)}
+.ttl-badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:999px;font-family:var(--font-mono);font-size:10.5px;font-weight:500}
+.ttl-green{background:var(--jade-pale);color:var(--jade);border:1px solid rgba(74,140,110,.3)}
+.ttl-yellow{background:var(--amber-pale);color:var(--amber);border:1px solid rgba(196,144,48,.3)}
+.ttl-red{background:var(--rust-pale);color:var(--rust);border:1px solid rgba(184,80,64,.3)}
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
+::-webkit-scrollbar-thumb:hover{background:var(--clay)}
+
+/* ─── LOADING OVERLAY ─── */
+#loading-screen{position:fixed;inset:0;background:var(--cream);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:1000;transition:opacity .5s ease}
+#loading-screen.fade-out{opacity:0;pointer-events:none}
+.loading-logo{font-family:var(--font-display);font-size:42px;color:var(--clay);letter-spacing:.04em;animation:logo-in 600ms ease both}
+@keyframes logo-in{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.loading-sub{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--text-muted);animation:logo-in 600ms ease 200ms both}
+.loading-bar-wrap{width:180px;height:2px;background:var(--linen);border-radius:2px;overflow:hidden;animation:logo-in 600ms ease 300ms both}
+.loading-bar{height:100%;background:var(--clay);border-radius:2px;animation:load-fill 1.2s cubic-bezier(.4,0,.2,1) 400ms forwards}
+@keyframes load-fill{from{width:0%}to{width:100%}}
+
+[data-theme="dark"] #loading-screen{background:var(--bg)}
+</style>
+</head>
+<body>
+
+<!-- LOADING SCREEN -->
+<div id="loading-screen">
+  <div class="loading-logo">CASA</div>
+  <div class="loading-sub">Client And Server Architecture</div>
+  <div class="loading-bar-wrap"><div class="loading-bar"></div></div>
+</div>
+
+<!-- APP SHELL -->
+<div class="casa-shell" id="app" data-theme="light" style="opacity:0;transition:opacity .4s ease">
+
+  <!-- Chrome bar -->
+  <div class="chrome-bar"></div>
+
+  <!-- Header -->
+  <header class="shell-header">
+    <!-- Inline logo SVG -->
+    <svg class="logo-svg" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="36" height="36" rx="8" fill="var(--clay-pale)"/>
+      <rect x="7" y="10" width="22" height="16" rx="3" stroke="var(--clay)" stroke-width="1.6" fill="none"/>
+      <line x1="7" y1="16" x2="29" y2="16" stroke="var(--clay)" stroke-width="1.3"/>
+      <circle cx="18" cy="13" r="1.2" fill="var(--clay)"/>
+      <line x1="13" y1="26" x2="13" y2="30" stroke="var(--clay)" stroke-width="1.4" stroke-linecap="round"/>
+      <line x1="23" y1="26" x2="23" y2="30" stroke="var(--clay)" stroke-width="1.4" stroke-linecap="round"/>
+      <line x1="10" y1="30" x2="26" y2="30" stroke="var(--clay)" stroke-width="1.4" stroke-linecap="round"/>
+    </svg>
+    <div class="header-wordmark">
+      <span class="casa-name">CASA</span>
+      <span class="casa-tagline">Client &amp; Server Architecture</span>
+    </div>
+    <div class="header-controls">
+      <button class="btn-theme-icon" onclick="toggleTheme()" title="Toggle theme">
+        <svg class="theme-icon" id="theme-icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        <svg class="theme-icon" id="theme-icon-moon" viewBox="0 0 24 24" style="display:none"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Nav -->
+  <nav class="tab-nav">
+    <button class="tab-link active" onclick="showPage('browser', this)">Browser</button>
+    <button class="tab-link" onclick="showPage('servers', this)">Servers</button>
+    <button class="tab-link" onclick="showPage('cache', this)">Cache</button>
+  </nav>
+
+  <!-- Body -->
+  <main class="shell-body">
+
+    <!-- ═══ BROWSER PAGE ═══ -->
+    <section class="page active browser-page" id="page-browser">
+      <div class="browser-toolbar">
+        <div class="address-bar-wrap">
+          <span class="ab-label">http://</span>
+          <input class="address-input" id="domain-input" value="apple.com" spellcheck="false" placeholder="apple.com" onkeydown="if(event.key==='Enter')navigate()"/>
+          <div class="browser-actions">
+            <button class="btn btn-go" id="go-btn" onclick="navigate()">Go</button>
+            <button class="btn btn-ghost" id="source-btn" onclick="toggleSource()">Source</button>
+            <button class="btn btn-tracer" id="tracer-btn" onclick="toggleTracer('browser')">Live Tracer</button>
+          </div>
+        </div>
+        <div class="status-strip">
+          <span class="status-icon idle" id="status-icon">●</span>
+          <span class="status-text" id="status-text">Ready — enter a domain and press Go</span>
+        </div>
+      </div>
+
+      <!-- badges injected here -->
+      <div id="browser-badges"></div>
+
+      <div class="browser-stage" id="browser-stage">
+        <div class="viewport-wrap" id="viewport-wrap">
+          <div class="viewport" id="viewport-col">
+            <div class="viewport-frame">
+              <div class="viewport-empty" id="viewport-empty">
+                <div class="empty-icon-wrap">
+                  <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                </div>
+                <div class="empty-headline">Web Viewport</div>
+                <div class="empty-text">Enter a domain above and press Go</div>
+                <div class="empty-hint">Try: apple.com · google.com · github.com</div>
+              </div>
+              <iframe id="render-frame" class="render-frame" style="display:none" sandbox="allow-scripts allow-same-origin" title="Rendered page"></iframe>
+            </div>
+          </div>
+          <div class="source-panel" id="source-panel" style="display:none">
+            <div class="source-header">
+              <span>INDEX.HTML SOURCE</span>
+              <span class="source-bytes" id="source-bytes">0 bytes</span>
+            </div>
+            <div class="source-body"><code id="source-code"></code></div>
+          </div>
+        </div>
+        <div class="tracer-drawer" id="browser-tracer" style="display:none">
+          <div class="log-panel">
+            <div class="log-header">
+              <span class="log-title">LIVE PACKET TRACER</span>
+              <span class="log-hint">UDP = DNS · TCP = HTTP · ERR = Error</span>
+              <button class="btn-clr" onclick="clearLog('browser-log')">CLR</button>
+            </div>
+            <div class="log-body" id="browser-log"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ SERVERS PAGE ═══ -->
+    <section class="page servers-page" id="page-servers">
+      <div class="servers-header">
+        <div class="sh-accent"></div>
+        <div class="sh-text">
+          <h1>Server Control Panel</h1>
+          <p>Start or stop servers before browsing domains.</p>
+        </div>
+        <div class="servers-header-actions">
+          <button class="btn btn-start-all" onclick="startAll()">▶ Start All</button>
+          <button class="btn btn-stop-all" onclick="stopAll()">■ Stop All</button>
+          <button class="btn btn-tracer" id="servers-tracer-btn" onclick="toggleTracer('servers')">Live Tracer</button>
+        </div>
+      </div>
+
+      <div class="servers-grid" id="servers-grid"></div>
+
+      <div class="servers-log-section" id="servers-log-section" style="display:none">
+        <div class="log-panel">
+          <div class="log-header">
+            <span class="log-title">LIVE PACKET TRACER</span>
+            <span class="log-hint">UDP = DNS · TCP = HTTP · ERR = Error</span>
+            <button class="btn-clr" onclick="clearLog('servers-log')">CLR</button>
+          </div>
+          <div class="log-body" id="servers-log"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ CACHE PAGE ═══ -->
+    <section class="page cache-page" id="page-cache">
+      <div class="servers-header">
+        <div class="sh-accent"></div>
+        <div class="sh-text">
+          <h1>Cache Manager</h1>
+          <p>DNS + response buffer — serves repeat requests instantly without hitting servers.</p>
+        </div>
+      </div>
+
+      <div class="cache-stats-bar">
+        <div class="cache-stat"><span class="cs-value" id="stat-urls">0</span><span class="cs-label">Cached URLs</span></div>
+        <div class="cache-stat"><span class="cs-value" id="stat-hits">0</span><span class="cs-label">Total Hits</span></div>
+        <div class="cache-stat"><span class="cs-value" id="stat-size">0 B</span><span class="cs-label">Cache Size</span></div>
+        <div class="cache-stat"><span class="cs-value cs-online" id="stat-status">ACTIVE</span><span class="cs-label">Status</span></div>
+      </div>
+
+      <div class="cache-settings-panel">
+        <div class="csp-row">
+          <span class="csp-label">Cache Enabled</span>
+          <button class="btn btn-stop btn-sm" id="cache-toggle-btn" onclick="toggleCache()">DISABLE</button>
+        </div>
+        <div class="csp-row">
+          <span class="csp-label">Default TTL (minutes)</span>
+          <input class="csp-input" type="number" min="1" max="60" value="5" id="ttl-input"/>
+          <button class="btn btn-go btn-sm" onclick="applyTtl()">Apply</button>
+        </div>
+        <div class="csp-row">
+          <span class="csp-label">Auto-clear when server stops</span>
+          <button class="btn btn-start btn-sm" id="autoclear-btn" onclick="toggleAutoClear()">ON</button>
+        </div>
+      </div>
+
+      <div class="cache-toolbar">
+        <button class="btn btn-ghost" onclick="refreshCache()">↻ Refresh</button>
+        <button class="btn btn-stop" id="clear-all-btn" onclick="confirmClear()">🗑 Clear All Cache</button>
+        <span class="confirm-prompt" id="confirm-clear" style="display:none">
+          Are you sure?
+          <button class="btn btn-stop btn-sm" onclick="doClearCache()">Yes, clear all</button>
+          <button class="btn btn-ghost btn-sm" onclick="cancelClear()">Cancel</button>
+        </span>
+      </div>
+
+      <div id="cache-content">
+        <div class="cache-empty">
+          <div class="empty-icon-wrap">
+            <svg viewBox="0 0 24 24" style="width:28px;height:28px;stroke:var(--text-muted);fill:none;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/></svg>
+          </div>
+          <div class="empty-headline">Cache is Empty</div>
+          <div class="empty-text">Visit a website in the Browser tab — it will be cached here automatically.</div>
+          <div class="empty-hint">Try: apple.com · google.com · github.com</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+const state = {
+  html: '',
+  sourceOpen: false,
+  tracerOpen: { browser: false, servers: false },
+  cacheEnabled: true,
+  autoClear: true,
+  ttlMinutes: 5,
+  logs: [],
+  cacheEntries: [],
+  servers: [
+    { id: 1, name: 'DNS Server', protocol: 'UDP', port: 5053, description: 'Resolves domain names to IP addresses using UDP datagrams.', online: false },
+    { id: 2, name: 'Web Server A', protocol: 'TCP', port: 8080, description: 'Serves HTML content for apple.com and google.com via HTTP/TCP.', online: false },
+    { id: 3, name: 'Web Server B', protocol: 'TCP', port: 8081, description: 'Serves HTML content for github.com and example.com via HTTP/TCP.', online: false },
+    { id: 4, name: 'Cache Server', protocol: 'TCP', port: 6379, description: 'In-memory key-value store holding DNS + HTML response cache entries.', online: false },
+  ]
+};
+
+// ═══════════════════════════════════════════
+// LOADING SCREEN
+// ═══════════════════════════════════════════
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('loading-screen').classList.add('fade-out');
+    document.getElementById('app').style.opacity = '1';
+    renderServers();
+    setTimeout(() => document.getElementById('loading-screen').remove(), 600);
+  }, 1700);
+});
+
+// ═══════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-link').forEach(l => l.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'cache') refreshCache();
+}
+
+// ═══════════════════════════════════════════
+// THEME
+// ═══════════════════════════════════════════
+function toggleTheme() {
+  const app = document.getElementById('app');
+  const isDark = app.dataset.theme === 'dark';
+  app.dataset.theme = isDark ? 'light' : 'dark';
+  document.getElementById('theme-icon-sun').style.display = isDark ? '' : 'none';
+  document.getElementById('theme-icon-moon').style.display = isDark ? 'none' : '';
+}
+
+// ═══════════════════════════════════════════
+// BROWSER — NAVIGATE (SIMULATED)
+// ═══════════════════════════════════════════
+function navigate() {
+  const domain = document.getElementById('domain-input').value.trim().toLowerCase()
+    .replace(/https?:\/\//,'').replace(/\/$/,'');
+  if (!domain) return;
+
+  const goBtn = document.getElementById('go-btn');
+  goBtn.textContent = 'Loading';
+  goBtn.disabled = true;
+  goBtn.classList.add('btn-loading');
+  setStatus('loading', '>', `Resolving ${domain} ...`);
+  clearBadges();
+
+  // Check if any server is online to allow navigation
+  const dnsOnline = state.servers[0].online;
+  const webOnline = state.servers[1].online || state.servers[2].online;
+
+  // Check cache
+  const cached = state.cacheEntries.find(e => e.url === domain && !isExpired(e));
+  if (cached) {
+    cached.hitCount++;
+    setTimeout(() => {
+      state.html = cached.htmlContent;
+      showFrame(state.html);
+      addLog('CACHE', 'HIT ⚡', `Served '${domain}' from cache (hit #${cached.hitCount})`, 1.2);
+      setStatus('ok', '⚡', `CACHE HIT  ${domain}  [${cached.sizeBytes} bytes]  (hit #${cached.hitCount})  1.2ms`);
+      showCacheHitBadge(cached);
+      resetGoBtn();
+    }, 300);
+    return;
+  }
+
+  // Simulate DNS + TCP fetch
+  setTimeout(() => {
+    addLog('BROWSER', 'Navigate', `User requested: ${domain}`);
+    if (!dnsOnline) {
+      simulateError('DNS_OFFLINE', `DNS Server is Offline — start it in the SERVERS tab`);
+      return;
+    }
+    addLog('UDP', 'Query →', `DNS lookup for [${domain}] → 127.0.0.1:5053`);
+    setTimeout(() => {
+      const ip = `127.0.0.${Math.floor(Math.random()*200)+10}`;
+      const port = 8080;
+      addLog('UDP', '← Reply', `Resolved ${domain} → ${ip}:${port}`, 8.3);
+      setStatus('loading', '>', `Connecting ${ip}:${port} ...`);
+      if (!webOnline) {
+        simulateError('SERVER_OFFLINE', `Website Server is Offline — start it in the SERVERS tab`);
+        return;
+      }
+      addLog('TCP', 'SYN →', `Opening TCP connection to ${ip}:${port}`);
+      setTimeout(() => {
+        const html = generateDemoHtml(domain, ip, port);
+        const size = new Blob([html]).size;
+        addLog('TCP', '← ACK', `HTML received (${size} bytes)`, 42.1);
+        // Cache it
+        if (state.cacheEnabled) {
+          const entry = { url: domain, resolvedIp: ip, port, htmlContent: html, cachedAt: Date.now(), hitCount: 0, ttlMs: state.ttlMinutes * 60000, sizeBytes: size };
+          state.cacheEntries.push(entry);
+          addLog('CACHE', 'STORE 💾', `Cached '${domain}' → ${ip}:${port} [${size} bytes] TTL=${state.ttlMinutes}min`);
+          showStoredBadge();
+        }
+        state.html = html;
+        showFrame(html);
+        setStatus('ok', '+', `OK  ${domain}  [${size} bytes]`);
+        resetGoBtn();
+      }, 600);
+    }, 400);
+  }, 200);
+}
+
+function simulateError(code, msg) {
+  addLog('ERROR', code, msg);
+  setStatus('error', '!', `ERROR  ${msg}`);
+  showFrame(buildErrorHtml(code, msg));
+  resetGoBtn();
+}
+
+function resetGoBtn() {
+  const goBtn = document.getElementById('go-btn');
+  goBtn.textContent = 'Go'; goBtn.disabled = false; goBtn.classList.remove('btn-loading');
+}
+
+function showFrame(html) {
+  const frame = document.getElementById('render-frame');
+  const empty = document.getElementById('viewport-empty');
+  frame.srcdoc = html;
+  frame.style.display = 'block';
+  empty.style.display = 'none';
+  if (state.sourceOpen) {
+    document.getElementById('source-code').textContent = html;
+    document.getElementById('source-bytes').textContent = `${html.length} bytes`;
+  }
+}
+
+function setStatus(cls, icon, text) {
+  const si = document.getElementById('status-icon');
+  const st = document.getElementById('status-text');
+  si.className = 'status-icon ' + cls;
+  si.textContent = icon;
+  st.textContent = text;
+}
+
+function clearBadges() { document.getElementById('browser-badges').innerHTML = ''; }
+
+function showCacheHitBadge(e) {
+  const secs = Math.floor((e.ttlMs - (Date.now() - e.cachedAt)) / 1000);
+  document.getElementById('browser-badges').innerHTML = `
+    <div class="cache-hit-badge">
+      <span>⚡</span>
+      <span class="cache-hit-text">Served from Cache</span>
+      <span class="cache-hit-meta">Cached ${new Date(e.cachedAt).toLocaleTimeString()} · Hit #${e.hitCount} · TTL ${secs}s remaining</span>
+      <a href="#" class="cache-hit-link" onclick="showPage('cache',document.querySelectorAll('.tab-link')[2]);return false">View Cache</a>
+    </div>`;
+}
+
+function showStoredBadge() {
+  document.getElementById('browser-badges').innerHTML = `
+    <div class="cache-stored-badge">
+      <span>💾 Response cached</span>
+      <a href="#" class="cache-hit-link" onclick="showPage('cache',document.querySelectorAll('.tab-link')[2]);return false">View Cache</a>
+    </div>`;
+}
+
+function toggleSource() {
+  state.sourceOpen = !state.sourceOpen;
+  const btn = document.getElementById('source-btn');
+  const panel = document.getElementById('source-panel');
+  btn.classList.toggle('active', state.sourceOpen);
+  panel.style.display = state.sourceOpen ? 'flex' : 'none';
+  if (state.sourceOpen && state.html) {
+    document.getElementById('source-code').textContent = state.html;
+    document.getElementById('source-bytes').textContent = `${state.html.length} bytes`;
+  }
+}
+
+function toggleTracer(ctx) {
+  state.tracerOpen[ctx] = !state.tracerOpen[ctx];
+  if (ctx === 'browser') {
+    document.getElementById('browser-tracer').style.display = state.tracerOpen[ctx] ? 'flex' : 'none';
+    document.getElementById('tracer-btn').classList.toggle('active', state.tracerOpen[ctx]);
+  } else {
+    document.getElementById('servers-log-section').style.display = state.tracerOpen[ctx] ? 'flex' : 'none';
+    document.getElementById('servers-tracer-btn').classList.toggle('active', state.tracerOpen[ctx]);
+  }
+}
+
+// ═══════════════════════════════════════════
+// LOG
+// ═══════════════════════════════════════════
+function addLog(protocol, action, message, elapsedMs = null) {
+  const now = new Date();
+  const ts = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}.${String(now.getMilliseconds()).padStart(3,'0')}`;
+  const elapsed = elapsedMs ? `${elapsedMs.toFixed(1)}ms` : '';
+  const proto = protocol.toLowerCase();
+  const row = `<div class="log-row ${proto}">
+    <span class="log-bar"></span>
+    <span class="log-ts">[${ts}]</span>
+    <span class="log-proto">${protocol.padEnd(7)}</span>
+    <span class="log-action">${action.padEnd(10)}</span>
+    ${elapsedMs ? `<span class="log-elapsed">${elapsed}</span>` : ''}
+    <span class="log-msg">${message}</span>
+  </div>`;
+  ['browser-log','servers-log'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.insertAdjacentHTML('beforeend', row); el.scrollTop = el.scrollHeight; }
+  });
+}
+
+function clearLog(id) { const el = document.getElementById(id); if(el) el.innerHTML = ''; }
+function pad(n) { return String(n).padStart(2,'0'); }
+
+// ═══════════════════════════════════════════
+// SERVERS
+// ═══════════════════════════════════════════
+function renderServers() {
+  const grid = document.getElementById('servers-grid');
+  grid.innerHTML = state.servers.map((s, i) => `
+    <div class="server-card ${s.online ? 'online' : 'offline'}" id="scard-${s.id}">
+      <div class="card-rail"></div>
+      <div class="card-top">
+        <div class="card-left">
+          <div class="status-dot ${s.online ? 'pulse' : ''}"></div>
+          <div class="card-info">
+            <span class="card-name">${s.name}</span>
+            <span class="card-port">${s.protocol} | Port ${s.port}</span>
+          </div>
+        </div>
+        <span class="status-badge ${s.online ? 'text-green' : 'text-red'}">${s.online ? 'ONLINE' : 'OFFLINE'}</span>
+      </div>
+      <p class="card-desc">${s.description}</p>
+      <div class="card-actions">
+        <button class="btn ${s.online ? 'btn-stop' : 'btn-start'}" onclick="toggleServer(${s.id})">
+          ${s.online ? 'STOP SERVER' : 'START SERVER'}
+        </button>
+      </div>
+      ${s.online ? '<div class="card-glow-bar"></div>' : ''}
+    </div>`).join('');
+}
+
+function toggleServer(id) {
+  const s = state.servers.find(x => x.id === id);
+  s.online = !s.online;
+  addLog('SYSTEM', s.online ? 'START' : 'STOP', `${s.name} → ${s.online ? 'ONLINE' : 'OFFLINE'}`);
+  if (!s.online && state.autoClear) {
+    state.cacheEntries = state.cacheEntries.filter(e => {
+      const keep = !(s.port === 8080 || s.port === 8081);
+      return keep;
+    });
+  }
+  renderServers();
+}
+
+function startAll() {
+  state.servers.forEach(s => {
+    if (!s.online) { s.online = true; addLog('SYSTEM','START',`${s.name} → ONLINE`); }
+  });
+  renderServers();
+}
+
+function stopAll() {
+  state.servers.forEach(s => {
+    if (s.online) { s.online = false; addLog('SYSTEM','STOP',`${s.name} → OFFLINE`); }
+  });
+  renderServers();
+}
+
+// ═══════════════════════════════════════════
+// CACHE
+// ═══════════════════════════════════════════
+function isExpired(e) { return Date.now() - e.cachedAt > e.ttlMs; }
+
+function refreshCache() {
+  state.cacheEntries = state.cacheEntries.filter(e => !isExpired(e));
+  const totalHits = state.cacheEntries.reduce((a,e) => a + e.hitCount, 0);
+  const totalBytes = state.cacheEntries.reduce((a,e) => a + e.sizeBytes, 0);
+  document.getElementById('stat-urls').textContent = state.cacheEntries.length;
+  document.getElementById('stat-hits').textContent = totalHits;
+  document.getElementById('stat-size').textContent = formatBytes(totalBytes);
+  const statusEl = document.getElementById('stat-status');
+  statusEl.textContent = state.cacheEnabled ? 'ACTIVE' : 'DISABLED';
+  statusEl.className = 'cs-value ' + (state.cacheEnabled ? 'cs-online' : 'cs-offline');
+  renderCacheTable();
+}
+
+function renderCacheTable() {
+  const el = document.getElementById('cache-content');
+  if (state.cacheEntries.length === 0) {
+    el.innerHTML = `<div class="cache-empty">
+      <div class="empty-icon-wrap">
+        <svg viewBox="0 0 24 24" style="width:28px;height:28px;stroke:var(--text-muted);fill:none;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/></svg>
+      </div>
+      <div class="empty-headline">Cache is Empty</div>
+      <div class="empty-text">Visit a website in the Browser tab — it will be cached here automatically.</div>
+      <div class="empty-hint">Try: apple.com · google.com · github.com</div>
+    </div>`;
+    return;
+  }
+  const rows = state.cacheEntries.map(e => {
+    const secLeft = Math.floor((e.ttlMs - (Date.now() - e.cachedAt)) / 1000);
+    const ttlCls = secLeft > 180 ? 'ttl-green' : secLeft > 60 ? 'ttl-yellow' : 'ttl-red';
+    return `<tr>
+      <td class="ct-url">${e.url}</td>
+      <td class="ct-mono">${e.resolvedIp}</td>
+      <td class="ct-mono">${e.port}</td>
+      <td class="ct-mono">${new Date(e.cachedAt).toLocaleTimeString()}</td>
+      <td><span class="ttl-badge ${ttlCls}">${secLeft}s</span></td>
+      <td class="ct-mono">${e.hitCount}</td>
+      <td class="ct-mono">${formatBytes(e.sizeBytes)}</td>
+      <td><button class="btn btn-stop btn-sm" onclick="removeEntry('${e.url}')">Remove</button></td>
+    </tr>`;
+  }).join('');
+  el.innerHTML = `<div class="cache-table-wrap"><table class="cache-table">
+    <thead><tr>
+      <th>URL</th><th>Resolved IP</th><th>Port</th><th>Cached At</th><th>TTL Remaining</th><th>Hits</th><th>Size</th><th>Action</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div>`;
+}
+
+function removeEntry(url) {
+  state.cacheEntries = state.cacheEntries.filter(e => e.url !== url);
+  refreshCache();
+}
+
+function toggleCache() {
+  state.cacheEnabled = !state.cacheEnabled;
+  const btn = document.getElementById('cache-toggle-btn');
+  btn.textContent = state.cacheEnabled ? 'DISABLE' : 'ENABLE';
+  btn.className = 'btn btn-sm ' + (state.cacheEnabled ? 'btn-stop' : 'btn-start');
+  refreshCache();
+}
+
+function toggleAutoClear() {
+  state.autoClear = !state.autoClear;
+  const btn = document.getElementById('autoclear-btn');
+  btn.textContent = state.autoClear ? 'ON' : 'OFF';
+  btn.className = 'btn btn-sm ' + (state.autoClear ? 'btn-start' : 'btn-stop');
+}
+
+function applyTtl() {
+  const val = parseInt(document.getElementById('ttl-input').value);
+  if (val >= 1 && val <= 60) state.ttlMinutes = val;
+}
+
+function confirmClear() { document.getElementById('confirm-clear').style.display = 'flex'; }
+function cancelClear()  { document.getElementById('confirm-clear').style.display = 'none'; }
+function doClearCache() { state.cacheEntries = []; cancelClear(); refreshCache(); }
+
+function formatBytes(b) {
+  if (b < 1024) return `${b} B`;
+  if (b < 1048576) return `${(b/1024).toFixed(1)} KB`;
+  return `${(b/1048576).toFixed(2)} MB`;
+}
+
+// ═══════════════════════════════════════════
+// HTML GENERATORS
+// ═══════════════════════════════════════════
+function generateDemoHtml(domain, ip, port) {
+  const colors = { 'apple.com': ['#1d1d1f','#f5f5f7','#0071e3'], 'google.com':['#fff','#4285F4','#34A853'], 'github.com':['#0d1117','#c9d1d9','#58a6ff'] };
+  const [bg,txt,acc] = colors[domain] || ['#ffffff','#1a1a2e','#C4785A'];
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:${bg};color:${txt};font-family:-apple-system,sans-serif;padding:32px;min-height:100vh}
+    .bar{background:${acc};height:3px;position:fixed;top:0;left:0;right:0}
+    nav{display:flex;align-items:center;gap:24px;padding-bottom:24px;border-bottom:1px solid ${acc}22;margin-bottom:32px}
+    .logo{font-size:22px;font-weight:700;color:${acc}}
+    .links{display:flex;gap:16px;font-size:13px;opacity:.6}
+    h1{font-size:32px;font-weight:700;margin-bottom:12px}
+    p{font-size:15px;opacity:.7;line-height:1.7;max-width:520px}
+    .meta{font-family:monospace;font-size:11px;opacity:.35;margin-top:24px;padding:10px;border:1px solid ${acc}33;border-radius:6px;display:inline-block}
+  </style></head><body>
+    <div class="bar"></div>
+    <nav><span class="logo">${domain}</span><div class="links"><span>Home</span><span>About</span><span>Docs</span></div></nav>
+    <h1>Welcome to ${domain}</h1>
+    <p>This page was fetched via CASA — Client And Server Architecture. It was resolved through the DNS server and served via TCP over HTTP.</p>
+    <div class="meta">Served from: ${ip}:${port} · Cached by CASA</div>
+  </body></html>`;
+}
+
+function buildErrorHtml(code, message) {
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#fff;color:#1a1a1a;font-family:Consolas,monospace;display:flex;align-items:center;justify-content:center;min-height:100vh}
+    .wrap{border:1px solid #B8504066;padding:48px 64px;text-align:center;max-width:560px;position:relative;overflow:hidden;border-radius:12px}
+    .wrap::before{content:'';position:absolute;left:0;top:0;width:3px;height:100%;background:linear-gradient(to bottom,#B85040,transparent)}
+    h1{font-size:1.6rem;color:#B85040;letter-spacing:3px;margin-bottom:12px}
+    .code{font-size:.8rem;color:#dc2626;margin-bottom:20px}
+    p{color:#334155;font-size:.85rem;line-height:1.8}
+    strong{color:#111}
+    hr{border:none;border-top:1px solid #e2e8f0;margin:18px 0}
+    .footer{font-size:.65rem;color:#94a3b8;letter-spacing:2px}
+  </style></head><body>
+    <div class="wrap">
+      <h1>${code}</h1>
+      <div class="code">${message}</div>
+      <p>Ensure the required server is <strong>ONLINE</strong> before navigating.<br>Open the <em>SERVERS</em> tab to start it.</p>
+      <hr>
+      <div class="footer">CASA | CLIENT AND SERVER ARCHITECTURE</div>
+    </div>
+  </body></html>`;
+}
+</script>
+</body>
+</html>

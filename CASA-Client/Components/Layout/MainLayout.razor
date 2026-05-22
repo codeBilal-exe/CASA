@@ -4,33 +4,82 @@
 @inject CASA_Client.Services.ThemeState ThemeState
 @inject IJSRuntime JS
 
-<div class="casa-shell" data-theme="@ThemeState.ThemeName">
+<div class="casa-shell" id="app" data-theme="@ThemeState.ThemeName">
     <div class="chrome-bar"></div>
 
     <header class="shell-header">
-        <img src="/images/logo.svg" alt="CASA Logo" class="casa-logo-img" />
-        <div class="header-text">
-            <span class="casa-tagline">Client And Server Architecture</span>
-            <span class="casa-version">v1.0</span>
+        <!-- Inline logo SVG -->
+        <svg class="logo-svg" width="36" height="36" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Chassis Background -->
+            <path d="M 32,15 C 32,13 34,12 36,12 L 64,12 C 66,12 68,13 68,15 L 68,80 C 68,82 66,83 64,83 L 36,83 C 34,83 32,82 32,80 Z" fill="var(--slate)" opacity="0.8"/>
+            <path d="M 35,15 L 65,15 L 65,79 L 35,79 Z" fill="var(--slate-alt)" opacity="0.9"/>
+            
+            <!-- Server Unit 3 (Top) -->
+            <!-- Top Face -->
+            <path d="M 50,10 L 82,18 L 50,26 L 18,18 Z" fill="var(--clay-light)"/>
+            <!-- Left Face -->
+            <path d="M 18,18 L 50,26 L 50,32 L 18,24 Z" fill="var(--clay)"/>
+            <!-- Right Face -->
+            <path d="M 50,26 L 82,18 L 82,24 L 50,32 Z" fill="var(--rust)"/>
+            <!-- Slot -->
+            <path d="M 24,20.5 L 38,24 L 38,26 L 24,22.5 Z" fill="var(--clay-pale)" opacity="0.6"/>
+            <!-- LEDs -->
+            <circle cx="41" cy="26.75" r="1.2" fill="var(--jade)"/>
+            <circle cx="44" cy="27.5" r="1.2" fill="var(--jade)"/>
+            <circle cx="47" cy="28.25" r="1.2" fill="var(--jade)"/>
+
+            <!-- Server Unit 2 (Middle) -->
+            <!-- Top Face -->
+            <path d="M 50,35 L 82,43 L 50,51 L 18,43 Z" fill="var(--clay-light)"/>
+            <!-- Left Face -->
+            <path d="M 18,43 L 50,51 L 50,57 L 18,49 Z" fill="var(--clay)"/>
+            <!-- Right Face -->
+            <path d="M 50,51 L 82,43 L 82,49 L 50,57 Z" fill="var(--rust)"/>
+            <!-- Slot -->
+            <path d="M 24,45.5 L 38,49 L 38,51 L 24,47.5 Z" fill="var(--clay-pale)" opacity="0.6"/>
+            <!-- LEDs -->
+            <circle cx="41" cy="51.75" r="1.2" fill="var(--jade)"/>
+            <circle cx="44" cy="52.5" r="1.2" fill="var(--jade)"/>
+            <circle cx="47" cy="53.25" r="1.2" fill="var(--jade)"/>
+
+            <!-- Server Unit 1 (Bottom) -->
+            <!-- Top Face -->
+            <path d="M 50,60 L 82,68 L 50,76 L 18,68 Z" fill="var(--clay-light)"/>
+            <!-- Left Face -->
+            <path d="M 18,68 L 50,76 L 50,82 L 18,74 Z" fill="var(--clay)"/>
+            <!-- Right Face -->
+            <path d="M 50,76 L 82,68 L 82,74 L 50,82 Z" fill="var(--rust)"/>
+            <!-- Slot -->
+            <path d="M 24,70.5 L 38,74 L 38,76 L 24,72.5 Z" fill="var(--clay-pale)" opacity="0.6"/>
+            <!-- LEDs -->
+            <circle cx="41" cy="76.75" r="1.2" fill="var(--jade)"/>
+            <circle cx="44" cy="77.5" r="1.2" fill="var(--jade)"/>
+            <circle cx="47" cy="78.25" r="1.2" fill="var(--jade)"/>
+        </svg>
+        <div class="header-wordmark">
+            <span class="casa-name">CASA</span>
+            <span class="casa-tagline">Client &amp; Server Architecture</span>
         </div>
-        <button class="btn btn-theme-icon"
-                @onclick="ToggleTheme"
-                title="Toggle theme"
-                aria-label="Toggle theme">
-            @if (ThemeState.IsDarkMode)
-            {
-                <svg viewBox="0 0 24 24" class="theme-icon" aria-hidden="true">
-                    <circle cx="12" cy="12" r="4"></circle>
-                    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path>
-                </svg>
-            }
-            else
-            {
-                <svg viewBox="0 0 24 24" class="theme-icon" aria-hidden="true">
-                    <path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"></path>
-                </svg>
-            }
-        </button>
+        <div class="header-controls">
+            <button class="btn btn-theme-icon"
+                    @onclick="ToggleTheme"
+                    title="Toggle theme"
+                    aria-label="Toggle theme">
+                @if (ThemeState.IsDarkMode)
+                {
+                    <svg viewBox="0 0 24 24" class="theme-icon" aria-hidden="true">
+                        <circle cx="12" cy="12" r="4"></circle>
+                        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path>
+                    </svg>
+                }
+                else
+                {
+                    <svg viewBox="0 0 24 24" class="theme-icon" aria-hidden="true">
+                        <path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"></path>
+                    </svg>
+                }
+            </button>
+        </div>
     </header>
 
     <nav class="tab-nav">

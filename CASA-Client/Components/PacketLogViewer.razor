@@ -19,6 +19,10 @@
                 <span class="log-ts">[@log.Timestamp.ToString("HH:mm:ss.fff")]</span>
                 <span class="log-proto">@log.Protocol.PadRight(7)</span>
                 <span class="log-action">@log.Action.PadRight(10)</span>
+                @if (log.ElapsedMs.HasValue)
+                {
+                    <span class="log-elapsed">@($"{log.ElapsedMs.Value:F1}ms")</span>
+                }
                 <span class="log-msg">@log.Message</span>
             </div>
         }

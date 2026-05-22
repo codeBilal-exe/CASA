@@ -1,0 +1,47 @@
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Chassis Background -->
+    <path d="M 32,15 C 32,13 34,12 36,12 L 64,12 C 66,12 68,13 68,15 L 68,80 C 68,82 66,83 64,83 L 36,83 C 34,83 32,82 32,80 Z" fill="#2E3A4A" opacity="0.8"/>
+    <path d="M 35,15 L 65,15 L 65,79 L 35,79 Z" fill="#222C3A" opacity="0.9"/>
+    
+    <!-- Server Unit 3 (Top) -->
+    <!-- Top Face -->
+    <path d="M 50,10 L 82,18 L 50,26 L 18,18 Z" fill="#E8A98A"/>
+    <!-- Left Face -->
+    <path d="M 18,18 L 50,26 L 50,32 L 18,24 Z" fill="#C4785A"/>
+    <!-- Right Face -->
+    <path d="M 50,26 L 82,18 L 82,24 L 50,32 Z" fill="#B85040"/>
+    <!-- Slot -->
+    <path d="M 24,20.5 L 38,24 L 38,26 L 24,22.5 Z" fill="#F5E8DF" opacity="0.6"/>
+    <!-- LEDs -->
+    <circle cx="41" cy="26.75" r="1.2" fill="#4A8C6E"/>
+    <circle cx="44" cy="27.5" r="1.2" fill="#4A8C6E"/>
+    <circle cx="47" cy="28.25" r="1.2" fill="#4A8C6E"/>
+
+    <!-- Server Unit 2 (Middle) -->
+    <!-- Top Face -->
+    <path d="M 50,35 L 82,43 L 50,51 L 18,43 Z" fill="#E8A98A"/>
+    <!-- Left Face -->
+    <path d="M 18,43 L 50,51 L 50,57 L 18,49 Z" fill="#C4785A"/>
+    <!-- Right Face -->
+    <path d="M 50,51 L 82,43 L 82,49 L 50,57 Z" fill="#B85040"/>
+    <!-- Slot -->
+    <path d="M 24,45.5 L 38,49 L 38,51 L 24,47.5 Z" fill="#F5E8DF" opacity="0.6"/>
+    <!-- LEDs -->
+    <circle cx="41" cy="51.75" r="1.2" fill="#4A8C6E"/>
+    <circle cx="44" cy="52.5" r="1.2" fill="#4A8C6E"/>
+    <circle cx="47" cy="53.25" r="1.2" fill="#4A8C6E"/>
+
+    <!-- Server Unit 1 (Bottom) -->
+    <!-- Top Face -->
+    <path d="M 50,60 L 82,68 L 50,76 L 18,68 Z" fill="#E8A98A"/>
+    <!-- Left Face -->
+    <path d="M 18,68 L 50,76 L 50,82 L 18,74 Z" fill="#C4785A"/>
+    <!-- Right Face -->
+    <path d="M 50,76 L 82,68 L 82,74 L 50,82 Z" fill="#B85040"/>
+    <!-- Slot -->
+    <path d="M 24,70.5 L 38,74 L 38,76 L 24,72.5 Z" fill="#F5E8DF" opacity="0.6"/>
+    <!-- LEDs -->
+    <circle cx="41" cy="76.75" r="1.2" fill="#4A8C6E"/>
+    <circle cx="44" cy="77.5" r="1.2" fill="#4A8C6E"/>
+    <circle cx="47" cy="78.25" r="1.2" fill="#4A8C6E"/>
+</svg>

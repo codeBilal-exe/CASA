@@ -2,6 +2,7 @@
 @namespace CASA_Client.Components.Pages
 @using CASA_Client.Services
 @using CASA_Client.Models
+@using System.Diagnostics
 @inject NetworkingService Network
 @inject PacketLogService LogService
 @inject CacheService Cache
@@ -85,9 +86,12 @@
                     else
                     {
                         <div class="viewport-empty">
-                            <div class="empty-icon">Web Viewport</div>
-                            <div class="empty-text">Enter a domain and press Go</div>
-                            <div class="empty-hint">Try: apple.com | google.com | github.com</div>
+                            <div class="empty-icon-wrap">
+                                <svg viewBox="0 0 24 24" style="width:28px;height:28px;stroke:var(--text-muted);fill:none;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                            </div>
+                            <div class="empty-headline">Web Viewport</div>
+                            <div class="empty-text">Enter a domain above and press Go</div>
+                            <div class="empty-hint">Try: apple.com · google.com · github.com</div>
                         </div>
                     }
                 </div>
@@ -157,14 +161,17 @@
 
         LogService.Add("BROWSER", "Navigate", $"User requested: {domain}");
 
+        var sw = Stopwatch.StartNew();
+
         // ── CACHE CHECK ──────────────────────────────────────────
         if (Cache.TryGet(domain, out var cached) && cached is not null)
         {
-            LogService.Add("CACHE", "HIT ⚡", $"Served '{domain}' from cache (hit #{cached.HitCount}) [{cached.SizeBytes} bytes]");
+            sw.Stop();
+            LogService.Add("CACHE", "HIT ⚡", $"Served '{domain}' from cache (hit #{cached.HitCount}) [{cached.SizeBytes} bytes]", sw.Elapsed.TotalMilliseconds);
             _html = cached.HtmlContent;
             _servedFromCache = true;
             _lastCacheEntry = cached;
-            _statusText = $"⚡ CACHE HIT  {domain}  [{cached.SizeBytes} bytes]  (hit #{cached.HitCount})";
+            _statusText = $"⚡ CACHE HIT  {domain}  [{cached.SizeBytes} bytes]  (hit #{cached.HitCount})  {sw.Elapsed.TotalMilliseconds:F1}ms";
             _statusIcon = "⚡";
             _statusClass = "ok";
             _loading = false;
@@ -176,23 +183,28 @@
         try
         {
             LogService.Add("UDP", "Query ->", $"DNS lookup for [{domain}] -> 127.0.0.1:5053");
+            var dnsTimer = Stopwatch.StartNew();
             var (ip, port) = await Network.ResolveDnsAsync(domain);
+            dnsTimer.Stop();
 
             if (ip == "NOT_FOUND")
             {
-                LogService.Add("UDP", "NXDOMAIN", $"No DNS record for [{domain}]");
+                LogService.Add("UDP", "NXDOMAIN", $"No DNS record for [{domain}]", dnsTimer.Elapsed.TotalMilliseconds);
                 ShowError("NXDOMAIN", $"No DNS record for '{domain}'.");
                 return;
             }
 
-            LogService.Add("UDP", "<- Reply", $"Resolved {domain} -> {ip}:{port}");
+            LogService.Add("UDP", "<- Reply", $"Resolved {domain} -> {ip}:{port}", dnsTimer.Elapsed.TotalMilliseconds);
             _statusText = $"Connecting {ip}:{port} ...";
             StateHasChanged();
 
             LogService.Add("TCP", "SYN ->", $"Opening TCP connection to {ip}:{port}");
+            var httpTimer = Stopwatch.StartNew();
             string html = await Network.FetchPageAsync(ip, port);
-            LogService.Add("TCP", "<- ACK", $"HTML received ({html.Length} bytes)");
+            httpTimer.Stop();
+            LogService.Add("TCP", "<- ACK", $"HTML received ({html.Length} bytes)", httpTimer.Elapsed.TotalMilliseconds);
 
+            sw.Stop();
             // ── CACHE STORE ──────────────────────────────────────
             Cache.Set(domain, ip, port, html);
             LogService.Add("CACHE", "STORE 💾", $"Cached '{domain}' -> {ip}:{port} [{html.Length} bytes] TTL={Cache.DefaultTtlMinutes}min");
@@ -236,16 +248,15 @@
 <meta charset='utf-8'>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#ffffff;color:#1a1a1a;font-family:Consolas,monospace;display:flex;align-items:center;justify-content:center;min-height:100vh}
-.wrap{border:1px solid #ff005588;padding:52px 72px;text-align:center;max-width:600px;background:#ffffff;position:relative;overflow:hidden}
-.wrap::before{content:'';position:absolute;left:0;top:0;width:3px;height:100%;background:linear-gradient(to bottom,#ff0055,transparent)}
-h1{font-size:1.8rem;color:#ff0055;letter-spacing:3px;margin-bottom:14px}
-.code{font-size:.82rem;color:#dc2626;margin-bottom:24px}
-p{color:#334155;font-size:.88rem;line-height:1.8}
-strong{color:#111827}
-em{color:#0f172a;font-style:normal}
-hr{border:none;border-top:1px solid #e2e8f0;margin:20px 0}
-.footer{font-size:.68rem;color:#64748b;letter-spacing:2px}
+body{background:#fff;color:#1a1a1a;font-family:Consolas,monospace;display:flex;align-items:center;justify-content:center;min-height:100vh}
+.wrap{border:1px solid #B8504066;padding:48px 64px;text-align:center;max-width:560px;position:relative;overflow:hidden;border-radius:12px}
+.wrap::before{content:'';position:absolute;left:0;top:0;width:3px;height:100%;background:linear-gradient(to bottom,#B85040,transparent)}
+h1{font-size:1.6rem;color:#B85040;letter-spacing:3px;margin-bottom:12px}
+.code{font-size:.8rem;color:#dc2626;margin-bottom:20px}
+p{color:#334155;font-size:.85rem;line-height:1.8}
+strong{color:#111}
+hr{border:none;border-top:1px solid #e2e8f0;margin:18px 0}
+.footer{font-size:.65rem;color:#94a3b8;letter-spacing:2px}
 </style>
 </head>
 <body>

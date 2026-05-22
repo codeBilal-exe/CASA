@@ -5,13 +5,20 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
-    <link rel="icon" type="image/svg+xml" href="/images/logo.svg" />
+    <link rel="icon" type="image/png" href="/images/favicon.png" />
     <link rel="stylesheet" href="css/app.css" />
     <title>CASA - Client And Server Architecture</title>
     <HeadOutlet />
 </head>
 
 <body>
+    <!-- LOADING SCREEN -->
+    <div id="loading-screen">
+        <div class="loading-logo">CASA</div>
+        <div class="loading-sub">Client And Server Architecture</div>
+        <div class="loading-bar-wrap"><div class="loading-bar"></div></div>
+    </div>
+
     <Routes />
     <script>
         window.casaTheme = {
@@ -20,6 +27,16 @@
                 document.body.setAttribute("data-theme", themeName);
             }
         };
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const screen = document.getElementById('loading-screen');
+                if (screen) {
+                    screen.classList.add('fade-out');
+                    setTimeout(() => screen.remove(), 600);
+                }
+                document.body.classList.add('loaded');
+            }, 1700);
+        });
     </script>
     <script src="_framework/blazor.server.js"></script>
 </body>

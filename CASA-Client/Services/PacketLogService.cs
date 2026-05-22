@@ -10,9 +10,9 @@ public class PacketLogService
 
     public event Action? OnChanged;
 
-    public void Add(string protocol, string action, string message)
+    public void Add(string protocol, string action, string message, double? elapsedMs = null)
     {
-        _logs.Add(new PacketLog(protocol, action, message));
+        _logs.Add(new PacketLog(protocol, action, message, elapsedMs));
         OnChanged?.Invoke();
     }
 

@@ -1,0 +1,18 @@
+# Visual Studio / .NET
+bin/
+obj/
+*.user
+*.suo
+*.sln.docstates
+
+# C/C++ / Build Artifacts
+*.exe
+*.dll
+*.o
+*.out
+*.lib
+*.a
+
+# OS generated files
+.DS_Store
+Thumbs.db

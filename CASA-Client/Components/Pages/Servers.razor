@@ -15,6 +15,14 @@
             <p>Start or stop servers before browsing domains.</p>
         </div>
         <div class="servers-header-actions">
+            <button class="btn btn-start-all"
+                    @onclick="StartAll">
+                ▶ Start All
+            </button>
+            <button class="btn btn-stop-all"
+                    @onclick="StopAllServers">
+                ■ Stop All
+            </button>
             <button class="btn btn-tracer @(_tracerOpen ? "active" : "")"
                     @onclick="ToggleTracer">
                 Live Tracer
@@ -41,6 +49,32 @@
     private bool _tracerOpen;
 
     private void ToggleTracer() => _tracerOpen = !_tracerOpen;
+
+    private void StartAll()
+    {
+        foreach (var server in ServerControl.Servers)
+        {
+            if (!server.IsOnline)
+            {
+                ServerControl.Start(server);
+                LogService.Add("SYSTEM", "START", $"{server.Name} -> ONLINE");
+            }
+        }
+        StateHasChanged();
+    }
+
+    private void StopAllServers()
+    {
+        foreach (var server in ServerControl.Servers)
+        {
+            if (server.IsOnline)
+            {
+                ServerControl.Stop(server);
+                LogService.Add("SYSTEM", "STOP", $"{server.Name} -> OFFLINE");
+            }
+        }
+        StateHasChanged();
+    }
 
     private void HandleLog(string raw)
     {

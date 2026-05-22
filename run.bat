@@ -78,7 +78,7 @@ if not exist "Websites\github\github_server.exe" set "all_compiled=false"
 
 if "%all_compiled%"=="false" (
     echo Binaries missing. Compiling all C servers...
-    call compile_servers.bat
+    call Servers\compile_servers.bat
 ) else (
     echo All binaries found. Skipping compilation.
 )
