@@ -22,6 +22,18 @@
 
     <p class="card-desc">@Server.Description</p>
 
+    @if (NeedsLoadBalancer && Server.IsOnline)
+    {
+        var lb = ServerControl.Servers
+                     .FirstOrDefault(s => s.Port == 8080);
+        if (lb is not null && !lb.IsOnline)
+        {
+            <div class="card-lb-warning">
+                ⚠ Load Balancer is offline — start it to
+                receive requests for this server
+            </div>
+        }
+    }
     <div class="card-actions">
         <button class="btn @(Server.IsOnline ? "btn-stop" : "btn-start")"
                 @onclick="Toggle">
@@ -38,6 +50,10 @@
 @code {
     [Parameter, EditorRequired] public ServerInfo Server { get; set; } = null!;
     [Parameter] public EventCallback<string> OnLog { get; set; }
+
+    private bool NeedsLoadBalancer =>
+        Server.Port != 5053 &&   // not DNS
+        Server.Port != 8080;     // not Load Balancer itself
 
     private async Task Toggle()
     {

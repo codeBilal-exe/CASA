@@ -11,7 +11,15 @@
         <button class="btn-clr" @onclick="LogService.Clear">CLR</button>
     </div>
 
-    <div class="log-body" id="log-scroll">
+    <div class="log-body log-body-h" id="log-scroll">
+        <div class="log-header-row">
+            <span class="log-bar" style="visibility: hidden;"></span>
+            <span class="log-ts">TIMESTAMP</span>
+            <span class="log-proto">PROTO</span>
+            <span class="log-action">ACTION</span>
+            <span class="log-elapsed">TIME</span>
+            <span class="log-msg">MESSAGE</span>
+        </div>
         @foreach (var log in LogService.Logs)
         {
             <div class="log-row @log.Protocol.ToLower()">
@@ -22,6 +30,10 @@
                 @if (log.ElapsedMs.HasValue)
                 {
                     <span class="log-elapsed">@($"{log.ElapsedMs.Value:F1}ms")</span>
+                }
+                else
+                {
+                    <span class="log-elapsed"></span>
                 }
                 <span class="log-msg">@log.Message</span>
             </div>

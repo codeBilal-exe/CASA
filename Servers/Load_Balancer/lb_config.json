@@ -9,7 +9,7 @@
     {
       "domain": "apple.com",
       "port": 8084,
-      "weight": 2
+      "weight": 1
     },
     {
       "domain": "apple.com",

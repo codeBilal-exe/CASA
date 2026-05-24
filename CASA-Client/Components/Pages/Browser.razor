@@ -229,7 +229,7 @@
             {
                 "DNS_OFFLINE"     => "DNS Server is Offline - start it in the SERVERS tab",
                 "DNS_TIMEOUT"     => "DNS Request Timed Out",
-                "SERVER_OFFLINE"  => "Website Server is Offline - start it in the SERVERS tab",
+                "SERVER_OFFLINE"  => $"'{domain}' server or Load Balancer is Offline. Go to SERVERS tab and ensure both the website server AND Load Balancer are running.",
                 "SERVER_TIMEOUT"  => "Website Not Responding",
                 _                 => $"Connection Error: {ex.Message}"
             };

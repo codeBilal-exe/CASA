@@ -79,7 +79,7 @@ int main() {
     fflush(stdout);
 
     char response[50] = "NOT_FOUND";
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 4; i++) {
       if (_stricmp(buf, dns_table[i].domain) == 0) {
         strcpy(response, dns_table[i].ip_port);
         break;
