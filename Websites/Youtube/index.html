@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YouTube</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #272727;
+    --border: #303030;
+    --text: #f1f1f1;
+    --text-sub: #aaaaaa;
+    --red: #ff0000;
+    --red-hover: #cc0000;
+    --chip-bg: #272727;
+    --chip-active: #f1f1f1;
+    --chip-active-text: #0f0f0f;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Roboto', sans-serif;
+    font-size: 14px;
+    overflow-x: hidden;
+  }
+
+  /* ── TOP NAV ── */
+  header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+    height: 56px;
+    background: var(--bg);
+    display: flex; align-items: center;
+    padding: 0 16px;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo-wrap {
+    display: flex; align-items: center; gap: 4px;
+    text-decoration: none; min-width: 160px;
+  }
+  .logo-wrap svg { height: 20px; }
+  .logo-text {
+    font-size: 20px; font-weight: 700; letter-spacing: -0.5px;
+    color: var(--text);
+  }
+  .logo-country {
+    font-size: 10px; color: var(--text-sub);
+    margin-top: 8px; margin-left: 2px;
+  }
+
+  .search-wrap {
+    flex: 1; display: flex; align-items: center;
+    max-width: 640px; margin: 0 auto;
+  }
+  .search-input {
+    flex: 1; height: 40px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-right: none;
+    border-radius: 40px 0 0 40px;
+    color: var(--text);
+    padding: 0 16px;
+    font-size: 16px; font-family: 'Roboto', sans-serif;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .search-input:focus { border-color: #1c62b9; }
+  .search-input::placeholder { color: var(--text-sub); }
+  .search-btn {
+    height: 40px; width: 64px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 0 40px 40px 0;
+    color: var(--text);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s;
+  }
+  .search-btn:hover { background: #3e3e3e; }
+
+  .nav-right {
+    display: flex; align-items: center; gap: 8px;
+    margin-left: auto;
+  }
+  .icon-btn {
+    width: 40px; height: 40px;
+    border-radius: 50%; border: none;
+    background: transparent; color: var(--text);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background .15s;
+    font-size: 18px;
+  }
+  .icon-btn:hover { background: var(--surface2); }
+  .sign-in-btn {
+    height: 36px; padding: 0 16px;
+    border: 1px solid #3ea6ff;
+    border-radius: 18px;
+    background: transparent;
+    color: #3ea6ff;
+    font-size: 14px; font-weight: 500;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+    transition: background .15s;
+  }
+  .sign-in-btn:hover { background: rgba(62,166,255,.1); }
+
+  /* ── SIDEBAR ── */
+  aside {
+    position: fixed; top: 56px; left: 0; bottom: 0;
+    width: 240px;
+    background: var(--bg);
+    overflow-y: auto; z-index: 100;
+    padding: 12px 0;
+    scrollbar-width: none;
+  }
+  aside::-webkit-scrollbar { display: none; }
+
+  .sidebar-section { padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .sidebar-section:last-child { border: none; }
+  .sidebar-label {
+    padding: 6px 24px 4px;
+    font-size: 12px; font-weight: 500; color: var(--text-sub);
+    text-transform: uppercase; letter-spacing: .05em;
+  }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 24px;
+    padding: 0 24px; height: 40px;
+    border-radius: 10px; margin: 0 8px;
+    cursor: pointer; text-decoration: none;
+    color: var(--text); font-size: 14px;
+    transition: background .1s;
+    white-space: nowrap;
+  }
+  .nav-item:hover { background: var(--surface2); }
+  .nav-item.active { background: var(--surface2); font-weight: 500; }
+  .nav-item svg { flex-shrink: 0; }
+
+  /* ── MAIN ── */
+  main {
+    margin-left: 240px;
+    padding-top: 56px;
+    min-height: 100vh;
+  }
+
+  /* Chips */
+  .chips-wrap {
+    position: sticky; top: 56px; z-index: 150;
+    background: var(--bg);
+    display: flex; align-items: center;
+    gap: 12px; padding: 12px 24px;
+    overflow-x: auto; scrollbar-width: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .chips-wrap::-webkit-scrollbar { display: none; }
+  .chip {
+    flex-shrink: 0; height: 32px; padding: 0 12px;
+    background: var(--chip-bg); border: none;
+    border-radius: 8px; color: var(--text);
+    font-size: 14px; cursor: pointer;
+    transition: background .15s;
+  }
+  .chip:hover { background: #3e3e3e; }
+  .chip.active {
+    background: var(--chip-active); color: var(--chip-active-text);
+    font-weight: 500;
+  }
+
+  /* Grid */
+  .video-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px 8px;
+    padding: 16px 24px 40px;
+  }
+
+  /* Video card */
+  .video-card { cursor: pointer; }
+  .video-card:hover .thumb-wrap img { transform: scale(1.03); }
+
+  .thumb-wrap {
+    position: relative; width: 100%;
+    aspect-ratio: 16/9;
+    background: var(--surface); border-radius: 12px;
+    overflow: hidden;
+  }
+  .thumb-wrap img {
+    width: 100%; height: 100%; object-fit: cover;
+    transition: transform .3s;
+    display: block;
+  }
+  .thumb-placeholder {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--surface);
+    font-size: 48px;
+  }
+  .duration {
+    position: absolute; bottom: 6px; right: 6px;
+    background: rgba(0,0,0,.85); color: #fff;
+    font-size: 12px; font-weight: 500;
+    padding: 2px 5px; border-radius: 4px;
+  }
+  .progress-bar {
+    position: absolute; bottom: 0; left: 0;
+    height: 3px; background: var(--red);
+  }
+
+  .video-meta { display: flex; gap: 12px; padding: 10px 4px 0; }
+  .avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--surface2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+    overflow: hidden;
+  }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .video-info { flex: 1; min-width: 0; }
+  .video-title {
+    font-size: 14px; font-weight: 500; color: var(--text);
+    line-height: 1.4; margin-bottom: 4px;
+    display: -webkit-box; -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .channel-name { font-size: 13px; color: var(--text-sub); }
+  .video-stats { font-size: 13px; color: var(--text-sub); margin-top: 2px; }
+
+  /* Shorts row */
+  .section-title {
+    padding: 20px 24px 8px;
+    font-size: 18px; font-weight: 600;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .shorts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+    gap: 12px; padding: 0 24px 8px;
+  }
+  .short-card {
+    cursor: pointer;
+    position: relative; border-radius: 12px; overflow: hidden;
+    aspect-ratio: 9/16; background: var(--surface);
+  }
+  .short-card:hover .short-overlay { opacity: 1; }
+  .short-thumb {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 52px;
+  }
+  .short-overlay {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,.5);
+    opacity: 0; transition: opacity .2s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .short-info {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 32px 12px 12px;
+    background: linear-gradient(transparent, rgba(0,0,0,.8));
+    color: #fff;
+  }
+  .short-title { font-size: 13px; font-weight: 500; line-height: 1.3; }
+  .short-views { font-size: 12px; color: rgba(255,255,255,.7); margin-top: 2px; }
+
+  /* ── FOOTER ── */
+  footer {
+    margin-left: 240px;
+    padding: 24px 24px 40px;
+    color: var(--text-sub);
+    font-size: 12px;
+    line-height: 2;
+  }
+  footer a { color: var(--text-sub); text-decoration: none; margin-right: 14px; }
+  footer a:hover { color: var(--text); }
+  .footer-copy { margin-top: 8px; }
+
+  /* Play overlay on hover */
+  .play-overlay {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,.3);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity .2s;
+    border-radius: 12px;
+  }
+  .thumb-wrap:hover .play-overlay { opacity: 1; }
+  .play-circle {
+    width: 48px; height: 48px; border-radius: 50%;
+    background: rgba(0,0,0,.7);
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* CASA badge */
+  .casa-badge {
+    position: fixed; bottom: 16px; right: 16px; z-index: 9999;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 14px;
+    font-size: 11px; color: var(--text-sub);
+    display: flex; align-items: center; gap: 6px;
+    pointer-events: none;
+  }
+  .casa-dot { width: 6px; height: 6px; border-radius: 50%; background: #00c48c; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <a class="logo-wrap" href="#">
+    <svg viewBox="0 0 90 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M27.9727 3.12313C27.6435 1.89499 26.6768 0.928216 25.4487 0.598972C23.2197 0 14.285 0 14.285 0C14.285 0 5.35042 0 3.12138 0.598972C1.89325 0.928244 0.926449 1.89499 0.597206 3.12313C0 5.35228 0 10 0 10C0 10 0 14.6477 0.597206 16.8769C0.926449 18.105 1.89325 19.0718 3.12138 19.401C5.35042 20 14.285 20 14.285 20C14.285 20 23.2197 20 25.4487 19.401C26.6768 19.0718 27.6435 18.105 27.9727 16.8769C28.5699 14.6477 28.5699 10 28.5699 10C28.5699 10 28.5699 5.35228 27.9727 3.12313Z" fill="#FF0000"/>
+      <path d="M11.4253 14.2854L18.8477 10.0004L11.4253 5.71533V14.2854Z" fill="white"/>
+    </svg>
+    <span class="logo-text">YouTube</span>
+    <span class="logo-country">PK</span>
+  </a>
+
+  <div class="search-wrap">
+    <input class="search-input" type="text" placeholder="Search">
+    <button class="search-btn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.87 20.17l-5.59-5.59C16.35 13.35 17 11.75 17 10c0-3.87-3.13-7-7-7s-7 3.13-7 7 3.13 7 7 7c1.75 0 3.35-.65 4.58-1.71l5.59 5.59.7-.71zM10 16c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/></svg>
+    </button>
+  </div>
+
+  <div class="nav-right">
+    <button class="icon-btn" title="Notifications">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+    </button>
+    <button class="sign-in-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+      Sign in
+    </button>
+  </div>
+</header>
+
+<!-- SIDEBAR -->
+<aside>
+  <div class="sidebar-section">
+    <a class="nav-item active" href="#">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      Home
+    </a>
+    <a class="nav-item" href="#">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M10 14.65v-5.3L15 12l-5 2.65zm7.77-4.33c-.77-.32-1.2-.5-1.22-.5H18c0-1-.1-2-.3-3h-1.3c.2.95.3 1.97.3 3s-.1 2.05-.3 3H18c.2-1 .3-2 .3-3zM2 12C2 6.48 6.48 2 12 2s10 4.48 10 10-4.48 10-10 10S2 17.52 2 12zm2 0c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8-8 3.58-8 8z"/></svg>
+      Shorts
+    </a>
+    <a class="nav-item" href="#">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M21 6H3v2h18V6zm-6 5H3v2h12v-2zm-6 5H3v2h6v-2zm14-4l-8 5V7l8 5z"/></svg>
+      Subscriptions
+    </a>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-label">You</div>
+    <a class="nav-item" href="#">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8 12.5v-9l6 4.5-6 4.5z"/></svg>
+      Your videos
+    </a>
+    <a class="nav-item" href="#">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+      History
+    </a>
+    <a class="nav-item" href="#">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M22 13h-4v4h-2v-4h-4v-2h4V7h2v4h4v2zm-8-6H2v2h12V7zM2 13v2h8v-2H2zm0 6h8v-2H2v2z"/></svg>
+      Playlists
+    </a>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-label">Explore</div>
+    <a class="nav-item" href="#">🔥 Trending</a>
+    <a class="nav-item" href="#">🎵 Music</a>
+    <a class="nav-item" href="#">🎮 Gaming</a>
+    <a class="nav-item" href="#">📰 News</a>
+    <a class="nav-item" href="#">⚽ Sports</a>
+    <a class="nav-item" href="#">🎓 Learning</a>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-label">More from YouTube</div>
+    <a class="nav-item" href="#">▶ YouTube Premium</a>
+    <a class="nav-item" href="#">🎙 YouTube Studio</a>
+    <a class="nav-item" href="#">🎬 YouTube Movies</a>
+  </div>
+
+  <div class="sidebar-section">
+    <a class="nav-item" href="#">⚙ Settings</a>
+    <a class="nav-item" href="#">🚩 Report history</a>
+    <a class="nav-item" href="#">❓ Help</a>
+    <a class="nav-item" href="#">💬 Send feedback</a>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main>
+
+  <!-- Chips -->
+  <div class="chips-wrap">
+    <button class="chip active">All</button>
+    <button class="chip">Gaming</button>
+    <button class="chip">Music</button>
+    <button class="chip">Podcasts</button>
+    <button class="chip">Python</button>
+    <button class="chip">Computer Science</button>
+    <button class="chip">Cricket</button>
+    <button class="chip">Live</button>
+    <button class="chip">Mixes</button>
+    <button class="chip">JavaScript</button>
+    <button class="chip">Anime</button>
+    <button class="chip">News</button>
+    <button class="chip">Cooking</button>
+    <button class="chip">Science</button>
+  </div>
+
+  <!-- Shorts -->
+  <div class="section-title">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="#ff0000"><path d="M10 14.65v-5.3L15 12l-5 2.65zm7.77-4.33c-.77-.32-1.2-.5-1.22-.5H18c0-1-.1-2-.3-3h-1.3c.2.95.3 1.97.3 3s-.1 2.05-.3 3H18c.2-1 .3-2 .3-3z"/></svg>
+    Shorts
+  </div>
+  <div class="shorts-grid">
+    <div class="short-card">
+      <div class="short-thumb">⚡</div>
+      <div class="short-overlay">▶</div>
+      <div class="short-info">
+        <div class="short-title">TCP Handshake explained in 60 seconds</div>
+        <div class="short-views">2.1M views</div>
+      </div>
+    </div>
+    <div class="short-card">
+      <div class="short-thumb">🌐</div>
+      <div class="short-overlay">▶</div>
+      <div class="short-info">
+        <div class="short-title">How DNS works</div>
+        <div class="short-views">987K views</div>
+      </div>
+    </div>
+    <div class="short-card">
+      <div class="short-thumb">🔐</div>
+      <div class="short-overlay">▶</div>
+      <div class="short-info">
+        <div class="short-title">HTTPS vs HTTP</div>
+        <div class="short-views">1.4M views</div>
+      </div>
+    </div>
+    <div class="short-card">
+      <div class="short-thumb">💻</div>
+      <div class="short-overlay">▶</div>
+      <div class="short-info">
+        <div class="short-title">What is a Load Balancer?</div>
+        <div class="short-views">3.2M views</div>
+      </div>
+    </div>
+    <div class="short-card">
+      <div class="short-thumb">🎮</div>
+      <div class="short-overlay">▶</div>
+      <div class="short-info">
+        <div class="short-title">UDP vs TCP Gaming</div>
+        <div class="short-views">756K views</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Video Grid -->
+  <div class="section-title" style="padding-top:8px;">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+    Recommended
+  </div>
+  <div class="video-grid" id="videoGrid"></div>
+
+</main>
+
+<footer>
+  <div>
+    <a href="#">About</a><a href="#">Press</a><a href="#">Copyright</a>
+    <a href="#">Contact us</a><a href="#">Creators</a><a href="#">Advertise</a>
+    <a href="#">Developers</a>
+  </div>
+  <div>
+    <a href="#">Terms</a><a href="#">Privacy</a><a href="#">Policy & Safety</a>
+    <a href="#">How YouTube works</a><a href="#">Test new features</a>
+  </div>
+  <div class="footer-copy">&copy; 2026 Google LLC</div>
+  <div style="margin-top:4px;color:#555">Simulated by CASA &middot; Client And Server Architecture</div>
+</footer>
+
+<div class="casa-badge">
+  <div class="casa-dot"></div>
+  CASA Simulation &middot; Port 8087
+</div>
+
+<script>
+  const videos = [
+    { emoji: "🌐", title: "Computer Networks Full Course - OSI Model, TCP/IP, Subnetting", channel: "CS Fundamentals", avatar: "📚", views: "4.2M views", time: "8 months ago", duration: "3:42:18", progress: 0 },
+    { emoji: "🔌", title: "Socket Programming in C - Build a TCP Server from Scratch", channel: "Low Level Learning", avatar: "⚙️", views: "1.8M views", time: "1 year ago", duration: "48:22", progress: 35 },
+    { emoji: "⚖️", title: "Load Balancing Algorithms Explained: Round Robin, Least Connections, Weighted", channel: "System Design Pro", avatar: "🏗️", views: "923K views", time: "5 months ago", duration: "22:07", progress: 0 },
+    { emoji: "🔍", title: "How DNS Works - The Domain Name System Explained in Detail", channel: "NetworkChuck", avatar: "🎯", views: "3.1M views", time: "2 years ago", duration: "16:45", progress: 72 },
+    { emoji: "🚀", title: "Blazor MAUI Hybrid App - Build Cross Platform Apps with .NET 8", channel: "Nick Chapsas", avatar: "🔷", views: "456K views", time: "3 months ago", duration: "34:58", progress: 0 },
+    { emoji: "📡", title: "HTTP/1.1 vs HTTP/2 vs HTTP/3 - Deep Dive into Web Protocols", channel: "Hussein Nasser", avatar: "📡", views: "2.7M views", time: "11 months ago", duration: "58:12", progress: 10 },
+    { emoji: "🧩", title: "Building a Distributed System from Scratch - Complete Tutorial", channel: "Arpit Bhayani", avatar: "🧠", views: "312K views", time: "2 months ago", duration: "1:12:30", progress: 0 },
+    { emoji: "🔐", title: "TLS/SSL Handshake Explained - How HTTPS Actually Works", channel: "Computerphile", avatar: "🎓", views: "1.5M views", time: "1 year ago", duration: "19:44", progress: 55 },
+    { emoji: "📦", title: "C Programming - Pointers, Memory Management and Sockets", channel: "Jacob Sorber", avatar: "💡", views: "887K views", time: "6 months ago", duration: "41:09", progress: 0 },
+    { emoji: "🌍", title: "How the Internet Actually Works - Packets, Routers and Reliability", channel: "Code.org", avatar: "🌱", views: "8.9M views", time: "3 years ago", duration: "7:55", progress: 0 },
+    { emoji: "🎯", title: "System Design Interview: Design a URL Shortener", channel: "Gaurav Sen", avatar: "⭐", views: "2.3M views", time: "4 years ago", duration: "14:18", progress: 88 },
+    { emoji: "⚡", title: "UDP vs TCP - When to Use Each Protocol and Why", channel: "Practical Networking", avatar: "🔗", views: "643K views", time: "9 months ago", duration: "12:33", progress: 0 },
+  ];
+
+  const grid = document.getElementById('videoGrid');
+  videos.forEach(v => {
+    grid.innerHTML += `
+      <div class="video-card">
+        <div class="thumb-wrap">
+          <div class="thumb-placeholder">${v.emoji}</div>
+          ${v.progress > 0 ? `<div class="progress-bar" style="width:${v.progress}%"></div>` : ''}
+          <div class="duration">${v.duration}</div>
+          <div class="play-overlay"><div class="play-circle"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg></div></div>
+        </div>
+        <div class="video-meta">
+          <div class="avatar">${v.avatar}</div>
+          <div class="video-info">
+            <div class="video-title">${v.title}</div>
+            <div class="channel-name">${v.channel}</div>
+            <div class="video-stats">${v.views} &bull; ${v.time}</div>
+          </div>
+        </div>
+      </div>`;
+  });
+
+  // Chip interaction
+  document.querySelectorAll('.chip').forEach(c => {
+    c.addEventListener('click', () => {
+      document.querySelectorAll('.chip').forEach(x => x.classList.remove('active'));
+      c.classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>
