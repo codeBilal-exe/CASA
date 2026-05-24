@@ -1,0 +1,328 @@
+@page "/loadbalancer"
+@namespace CASA_Client.Components.Pages
+@using System.Text.Json
+@using System.IO
+@using CASA_Client.Services
+@inject ServerControlService ServerControl
+@implements IDisposable
+
+<PageTitle>CASA - Load Balancer</PageTitle>
+
+<div class="servers-page">
+    <div class="servers-header">
+        <div class="sh-accent" style="background: var(--blue);"></div>
+        <div class="sh-text">
+            <h1>Load Balancer Control Panel</h1>
+            <p>Manage routing algorithms, backend pools, and monitor real-time traffic.</p>
+        </div>
+        <div class="servers-header-actions">
+            @if (_config != null)
+            {
+                <select class="lb-algo-select" @bind="_config.Algorithm" @bind:after="SaveConfig">
+                    <option value="Round Robin">Round Robin</option>
+                    <option value="Least Connections">Least Connections</option>
+                    <option value="Weighted Round Robin">Weighted Round Robin</option>
+                </select>
+            }
+        </div>
+    </div>
+
+    @if (_config != null)
+    {
+        <div class="lb-status-bar glass-panel">
+            <div class="lb-stat-box">
+                <span class="lb-stat-label">LAST ROUTE</span>
+                <span class="lb-stat-value highlight-text">@(_stats?.last_route ?? "None")</span>
+            </div>
+            <div class="lb-stat-box">
+                <span class="lb-stat-label">TOTAL BACKENDS</span>
+                <span class="lb-stat-value highlight-text">@_config.Servers.Count</span>
+            </div>
+        </div>
+
+        <div class="lb-table-container">
+            <table class="lb-table">
+                <thead>
+                    <tr>
+                        <th>DOMAIN</th>
+                        <th>PORT</th>
+                        <th>WEIGHT</th>
+                        <th>ACTIVE CONNECTIONS</th>
+                        <th>ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var s in _config.Servers)
+                    {
+                        <tr>
+                            <td>
+                                <input class="lb-input" type="text" @bind="s.domain" @bind:after="SaveConfig" />
+                            </td>
+                            <td>
+                                <input class="lb-input" type="number" @bind="s.port" @bind:after="SaveConfig" />
+                            </td>
+                            <td>
+                                <input class="lb-input" type="number" @bind="s.weight" @bind:after="SaveConfig" />
+                            </td>
+                            <td>
+                                <div class="lb-conn-badge">
+                                    <span class="status-dot pulse"></span>
+                                    @(GetConnectionCount(s.port))
+                                </div>
+                            </td>
+                            <td>
+                                <button class="btn-remove-icon" @onclick="() => RemoveServer(s)" title="Remove Server">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/>
+                                    </svg>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="lb-loading">
+            <span class="status-loader"></span> Loading Configuration...
+        </div>
+    }
+</div>
+
+<style>
+    .lb-algo-select {
+        background: var(--bg-card);
+        color: var(--text-main);
+        border: 1px solid var(--border-color);
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-family: inherit;
+        font-size: 0.9rem;
+        outline: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .lb-algo-select:focus {
+        border-color: var(--blue);
+        box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.3);
+    }
+    .glass-panel {
+        background: rgba(30, 41, 59, 0.6);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
+    .lb-status-bar {
+        display: flex;
+        gap: 40px;
+        padding: 24px 32px;
+        border-radius: 12px;
+        margin-bottom: 32px;
+        align-items: center;
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    }
+    .lb-stat-box {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .lb-stat-label {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        font-weight: 600;
+    }
+    .lb-stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        font-family: 'Inter', sans-serif;
+    }
+    .highlight-text {
+        background: linear-gradient(90deg, #38bdf8, #818cf8);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .lb-table-container {
+        background: rgba(15, 23, 42, 0.7);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    }
+    .lb-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+    .lb-table th {
+        background: rgba(0, 0, 0, 0.3);
+        color: var(--text-muted);
+        font-size: 0.8rem;
+        font-weight: 600;
+        letter-spacing: 1px;
+        padding: 16px 24px;
+        text-transform: uppercase;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .lb-table td {
+        padding: 16px 24px;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        vertical-align: middle;
+        transition: background 0.2s;
+    }
+    .lb-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+    .lb-table tbody tr:hover td {
+        background: rgba(255,255,255,0.03);
+    }
+    .lb-input {
+        background: rgba(0,0,0,0.3);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: var(--text-main);
+        padding: 10px 14px;
+        border-radius: 6px;
+        width: 100%;
+        max-width: 160px;
+        font-family: 'Inter', Consolas, monospace;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+    }
+    .lb-input:focus {
+        outline: none;
+        border-color: #38bdf8;
+        background: rgba(0,0,0,0.5);
+        box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+    }
+    .lb-conn-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(56, 189, 248, 0.05));
+        border: 1px solid rgba(56, 189, 248, 0.3);
+        color: #38bdf8;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-family: Consolas, monospace;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+    .btn-remove-icon {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid transparent;
+        color: #ef4444;
+        padding: 8px;
+        border-radius: 8px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+    .btn-remove-icon:hover {
+        background: #ef4444;
+        color: white;
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    }
+    .lb-loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        padding: 60px;
+        color: var(--text-muted);
+        font-size: 1.1rem;
+    }
+</style>
+
+@code {
+    private LbConfig? _config;
+    private LbStats? _stats;
+    private System.Threading.Timer? _timer;
+    private string _configPath = string.Empty;
+    private string _statsPath = string.Empty;
+
+    public class LbConfig {
+        public string Algorithm { get; set; } = "Round Robin";
+        public List<LbServer> Servers { get; set; } = new();
+    }
+    public class LbServer {
+        public string domain { get; set; } = "";
+        public int port { get; set; }
+        public int weight { get; set; } = 1;
+    }
+    public class LbStats {
+        public string last_route { get; set; } = "";
+        public Dictionary<string, int> connections { get; set; } = new();
+    }
+
+    protected override void OnInitialized()
+    {
+        var basePath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "../../../.."));
+        _configPath = Path.Combine(basePath, "Servers", "Load_Balancer", "lb_config.json");
+        _statsPath = Path.Combine(basePath, "Servers", "Load_Balancer", "lb_stats.json");
+
+        LoadConfig();
+        _timer = new System.Threading.Timer(_ => LoadStats(), null, 0, 1000);
+    }
+
+    private void LoadConfig()
+    {
+        try {
+            if (File.Exists(_configPath)) {
+                string json = File.ReadAllText(_configPath);
+                _config = JsonSerializer.Deserialize<LbConfig>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            }
+        } catch { }
+    }
+
+    private void SaveConfig()
+    {
+        try {
+            if (_config != null) {
+                string json = JsonSerializer.Serialize(_config, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(_configPath, json);
+            }
+        } catch { }
+    }
+
+    private void LoadStats()
+    {
+        try {
+            if (File.Exists(_statsPath)) {
+                string json = File.ReadAllText(_statsPath);
+                var stats = JsonSerializer.Deserialize<LbStats>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                if (stats != null) {
+                    _stats = stats;
+                    InvokeAsync(StateHasChanged);
+                }
+            }
+        } catch { }
+    }
+
+    private void RemoveServer(LbServer s)
+    {
+        _config?.Servers.Remove(s);
+        SaveConfig();
+    }
+    
+    private int GetConnectionCount(int port)
+    {
+        if (_stats != null && _stats.connections.TryGetValue(port.ToString(), out int count))
+            return count;
+        return 0;
+    }
+
+    public void Dispose()
+    {
+        _timer?.Dispose();
+    }
+}

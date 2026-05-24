@@ -12,9 +12,10 @@ typedef struct {
   char ip_port[50];
 } DNSEntry;
 
-DNSEntry dns_table[] = {{"apple.com", "127.0.0.1:8081"},
-                        {"google.com", "127.0.0.1:8082"},
-                        {"github.com", "127.0.0.1:8083"}};
+DNSEntry dns_table[] = {{"apple.com", "127.0.0.1:8080"},
+                        {"google.com", "127.0.0.1:8080"},
+                        {"github.com", "127.0.0.1:8080"},
+                        {"youtube.com", "127.0.0.1:8080"}};
 
 int main() {
   WSADATA wsa;
@@ -59,7 +60,7 @@ int main() {
   }
 
   printf("DNS Server listening on UDP port %d...\n", PORT);
-  printf("Ready to resolve: apple.com, google.com, github.com\n\n");
+  printf("Ready to resolve: apple.com, google.com, github.com, youtube.com\n\n");
 
   while (1) {
     memset(buf, 0, BUF_SIZE);

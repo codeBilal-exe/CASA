@@ -37,7 +37,7 @@ public class NetworkingService
     }
 
     // ── HTTP (TCP) ───────────────────────────────────────────────────────────
-    public async Task<string> FetchPageAsync(string ip, int port)
+    public async Task<string> FetchPageAsync(string ip, int port, string domain)
     {
         try
         {
@@ -51,7 +51,7 @@ public class NetworkingService
             stream.ReadTimeout = 5000;
 
             // HTTP/1.0 so server closes after response — no chunked encoding
-            string req = "GET / HTTP/1.0\r\nHost: localhost\r\nConnection: close\r\n\r\n";
+            string req = $"GET / HTTP/1.0\r\nHost: {domain}\r\nConnection: close\r\n\r\n";
             byte[] reqBytes = Encoding.ASCII.GetBytes(req);
             await stream.WriteAsync(reqBytes);
 

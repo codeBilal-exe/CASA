@@ -1,4 +1,4 @@
-@echo off
+    @echo off
 setlocal enabledelayedexpansion
 echo ==================================================
 echo CASA - Client And Server Architecture Launcher
@@ -72,13 +72,18 @@ echo.
 echo [STEP 1] Checking for server binaries...
 set "all_compiled=true"
 if not exist "Servers\DNS_Server\DNS_Server.exe" set "all_compiled=false"
-if not exist "Websites\apple\apple_server.exe" set "all_compiled=false"
-if not exist "Websites\google\google_server.exe" set "all_compiled=false"
-if not exist "Websites\github\github_server.exe" set "all_compiled=false"
+if not exist "Servers\Load_Balancer\Load_Balancer.exe" set "all_compiled=false"
+if not exist "Websites\Apple\apple_Servers\apple_server.exe" set "all_compiled=false"
+if not exist "Websites\Apple\apple_Servers\apple2_server.exe" set "all_compiled=false"
+if not exist "Websites\Apple\apple_Servers\apple3_server.exe" set "all_compiled=false"
+if not exist "Websites\Google\google-Servers\google_server.exe" set "all_compiled=false"
+if not exist "Websites\Google\google-Servers\google2_server.exe" set "all_compiled=false"
+if not exist "Websites\Github\github_server.exe" set "all_compiled=false"
+if not exist "Websites\Youtube\yoututbe-Servers\youtube_server.exe" set "all_compiled=false"
 
 if "%all_compiled%"=="false" (
     echo Binaries missing. Compiling all C servers...
-    call Servers\compile_servers.bat
+    call Servers\DNS_Server\compile_servers.bat
 ) else (
     echo All binaries found. Skipping compilation.
 )

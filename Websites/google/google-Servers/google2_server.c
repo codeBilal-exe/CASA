@@ -27,8 +27,8 @@ void send_response(SOCKET client_socket, const char *file_path) {
 }
 
 int main() {
-    int port = 8082;
-    const char *site_path = "index.html";
+    int port = 8086;
+    const char *site_path = "../index.html";
 
     WSADATA wsa;
     SOCKET s, new_socket;
@@ -45,7 +45,7 @@ int main() {
     if (bind(s, (struct sockaddr *)&server, sizeof(server)) == SOCKET_ERROR) return 1;
 
     listen(s, 3);
-    printf("Google Server started on port %d...\n", port);
+    printf("Google2 Server started on port %d...\n", port);
     fflush(stdout);
 
     while (1) {

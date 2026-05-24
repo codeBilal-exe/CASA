@@ -204,7 +204,7 @@
 
             LogService.Add("TCP", "SYN ->", $"Opening TCP connection to {ip}:{port}");
             var httpTimer = Stopwatch.StartNew();
-            string html = await Network.FetchPageAsync(ip, port);
+            string html = await Network.FetchPageAsync(ip, port, domain);
             httpTimer.Stop();
             LogService.Add("TCP", "<- ACK", $"HTML received ({html.Length} bytes)", httpTimer.Elapsed.TotalMilliseconds);
 

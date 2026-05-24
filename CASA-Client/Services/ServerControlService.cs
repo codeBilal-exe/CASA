@@ -15,9 +15,14 @@ public class ServerControlService : IDisposable
     public List<ServerInfo> Servers { get; } = new()
     {
         new() { Name = "DNS Resolver",   ExePath = "Servers/DNS_Server/DNS_Server.exe",   Description = "Domain → IP resolver",     Protocol = "UDP", Port = 5053 },
-        new() { Name = "Apple Website",  ExePath = "Websites/apple/apple_server.exe",     Description = "Think Different",          Protocol = "TCP", Port = 8081 },
-        new() { Name = "Google Website", ExePath = "Websites/google/google_server.exe",   Description = "Search engine simulation", Protocol = "TCP", Port = 8082 },
-        new() { Name = "GitHub Website", ExePath = "Websites/github/github_server.exe",   Description = "Repository simulation",    Protocol = "TCP", Port = 8083 },
+        new() { Name = "Load Balancer",  ExePath = "Servers/Load_Balancer/Load_Balancer.exe", Description = "Distributes traffic",  Protocol = "TCP", Port = 8080 },
+        new() { Name = "Apple Website 1",ExePath = "Websites/Apple/apple_Servers/apple_server.exe",     Description = "Think Different",          Protocol = "TCP", Port = 8081 },
+        new() { Name = "Apple Website 2",ExePath = "Websites/Apple/apple_Servers/apple2_server.exe",   Description = "Think Different 2",        Protocol = "TCP", Port = 8084 },
+        new() { Name = "Apple Website 3",ExePath = "Websites/Apple/apple_Servers/apple3_server.exe",   Description = "Think Different 3",        Protocol = "TCP", Port = 8085 },
+        new() { Name = "Google Website 1",ExePath = "Websites/Google/google-Servers/google_server.exe",  Description = "Search engine simulation", Protocol = "TCP", Port = 8082 },
+        new() { Name = "Google Website 2",ExePath = "Websites/Google/google-Servers/google2_server.exe",Description = "Search engine simulation 2", Protocol = "TCP", Port = 8086 },
+        new() { Name = "GitHub Website", ExePath = "Websites/Github/github_server.exe",   Description = "Repository simulation",    Protocol = "TCP", Port = 8083 },
+        new() { Name = "YouTube Website",ExePath = "Websites/Youtube/yoututbe-Servers/youtube_server.exe",Description = "Video streaming simulation", Protocol = "TCP", Port = 8087 },
     };
 
     public event Action? OnChanged;
@@ -46,7 +51,8 @@ public class ServerControlService : IDisposable
             FileName = fullPath,
             WorkingDirectory = workDir,
             UseShellExecute = true,
-            CreateNoWindow = false
+            CreateNoWindow = false,
+            WindowStyle = ProcessWindowStyle.Minimized
         };
 
         var proc = Process.Start(psi);

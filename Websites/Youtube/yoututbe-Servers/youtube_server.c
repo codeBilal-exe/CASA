@@ -27,8 +27,8 @@ void send_response(SOCKET client_socket, const char *file_path) {
 }
 
 int main() {
-    int port = 8081;
-    const char *site_path = "index.html";
+    int port = 8087;
+    const char *site_path = "../index.html"; // The index.html is one level up based on user's structure
 
     WSADATA wsa;
     SOCKET s, new_socket;
@@ -45,7 +45,7 @@ int main() {
     if (bind(s, (struct sockaddr *)&server, sizeof(server)) == SOCKET_ERROR) return 1;
 
     listen(s, 3);
-    printf("Apple Server started on port %d...\n", port);
+    printf("Youtube Server started on port %d...\n", port);
     fflush(stdout);
 
     while (1) {

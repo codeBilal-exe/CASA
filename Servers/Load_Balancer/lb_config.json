@@ -1,0 +1,40 @@
+{
+  "Algorithm": "Round Robin",
+  "Servers": [
+    {
+      "domain": "apple.com",
+      "port": 8081,
+      "weight": 8
+    },
+    {
+      "domain": "apple.com",
+      "port": 8084,
+      "weight": 2
+    },
+    {
+      "domain": "apple.com",
+      "port": 8085,
+      "weight": 9
+    },
+    {
+      "domain": "google.com",
+      "port": 8082,
+      "weight": 1
+    },
+    {
+      "domain": "google.com",
+      "port": 8086,
+      "weight": 1
+    },
+    {
+      "domain": "github.com",
+      "port": 8083,
+      "weight": 1
+    },
+    {
+      "domain": "youtube.com",
+      "port": 8087,
+      "weight": 1
+    }
+  ]
+}
