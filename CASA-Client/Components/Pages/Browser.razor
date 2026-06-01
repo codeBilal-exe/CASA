@@ -3,6 +3,7 @@
 @using CASA_Client.Services
 @using CASA_Client.Models
 @using System.Diagnostics
+@using System.IO
 @inject NetworkingService Network
 @inject PacketLogService LogService
 @inject CacheService Cache
@@ -67,8 +68,17 @@
     else if (!string.IsNullOrEmpty(_html) && !_servedFromCache)
     {
         <div class="cache-stored-badge">
-            <span>Response cached</span>
-            <a href="/cache" class="cache-hit-link">View Cache</a>
+            <span>💾 Response cached</span>
+            @if (!string.IsNullOrEmpty(_lbBackendPort))
+            {
+                <span class="lb-inline-badge">
+                    ✦ @_lbAlgorithm → backend port
+                    <strong>:@_lbBackendPort</strong>
+                </span>
+            }
+            <a href="/cache" class="cache-hit-link">
+                View Cache
+            </a>
         </div>
     }
 
@@ -129,9 +139,59 @@
     private string _statusText = "Ready - enter a domain and press Go";
     private string _statusIcon = "*";
     private string _statusClass = "idle";
+    private string _lbBackendPort = string.Empty;
+    private string _lbAlgorithm = string.Empty;
 
     private void ToggleSource() => _sourceOpen = !_sourceOpen;
     private void ToggleTracer() => _tracerOpen = !_tracerOpen;
+
+    private (string backendPort, string algorithm) ReadLbInfo()
+    {
+        try
+        {
+            string basePath = Path.GetFullPath(
+                Path.Combine(
+                    AppDomain.CurrentDomain.BaseDirectory,
+                    "../../../.."));
+
+            string statsPath = Path.Combine(
+                basePath, "Servers", "Load_Balancer",
+                "lb_stats.json");
+
+            string configPath = Path.Combine(
+                basePath, "Servers", "Load_Balancer",
+                "lb_config.json");
+
+            string backendPort = string.Empty;
+            string algorithm = "Round Robin";
+
+            if (File.Exists(statsPath))
+            {
+                string json = File.ReadAllText(statsPath);
+                var m = System.Text.RegularExpressions.Regex.Match(
+                    json,
+                    "\"last_route\"\\s*:\\s*\"[^\"]*->\\s*(\\d+)\"");
+                if (m.Success)
+                    backendPort = m.Groups[1].Value.Trim();
+            }
+
+            if (File.Exists(configPath))
+            {
+                string json = File.ReadAllText(configPath);
+                var m = System.Text.RegularExpressions.Regex.Match(
+                    json,
+                    "\"Algorithm\"\\s*:\\s*\"([^\"]+)\"");
+                if (m.Success)
+                    algorithm = m.Groups[1].Value.Trim();
+            }
+
+            return (backendPort, algorithm);
+        }
+        catch
+        {
+            return (string.Empty, "Round Robin");
+        }
+    }
 
     private async Task OnKeyDown(KeyboardEventArgs e)
     {
@@ -155,6 +215,8 @@
         _loading = true;
         _servedFromCache = false;
         _lastCacheEntry = null;
+        _lbBackendPort = string.Empty;
+        _lbAlgorithm = string.Empty;
         _statusText = $"Resolving {domain} ...";
         _statusIcon = ">";
         _statusClass = "loading";
@@ -169,9 +231,15 @@
         {
             _sw.Stop();
             double msCache = _sw.Elapsed.TotalMilliseconds;
+            string cachedPortInfo = cached.Port != 8080
+                ? $"originally backend :{cached.Port} — "
+                : string.Empty;
+
             LogService.Add("CACHE", "HIT",
-                $"Served '{domain}' from cache (hit #{cached.HitCount}) " +
-                $"[{cached.SizeBytes} bytes] - {msCache:F2} ms (no network)");
+                $"Served '{domain}' from cache — {cachedPortInfo}" +
+                $"hit #{cached.HitCount} [{cached.SizeBytes} bytes] " +
+                $"— {msCache:F2} ms (Load Balancer bypassed)",
+                msCache);
             _html = cached.HtmlContent;
             _servedFromCache = true;
             _lastCacheEntry = cached;
@@ -208,18 +276,43 @@
             httpTimer.Stop();
             LogService.Add("TCP", "<- ACK", $"HTML received ({html.Length} bytes)", httpTimer.Elapsed.TotalMilliseconds);
 
+            // Read which backend the Load Balancer actually chose
+            var (lbPort, lbAlgo) = ReadLbInfo();
+            _lbBackendPort = lbPort;
+            _lbAlgorithm = lbAlgo;
+
+            if (!string.IsNullOrEmpty(lbPort))
+            {
+                LogService.Add("LB", "Route",
+                    $"[{lbAlgo}] {domain} — LB entry :8080 " +
+                    $"→ backend :{lbPort}");
+            }
+
             sw.Stop();
             // Cache store
-            Cache.Set(domain, ip, port, html);
+            int backendPortNum = int.TryParse(
+                _lbBackendPort, out int p) ? p : port;
+            Cache.Set(domain, ip, backendPortNum, html);
             _sw.Stop();
             double msTotal = _sw.Elapsed.TotalMilliseconds;
+            string portDisplay = string.IsNullOrEmpty(_lbBackendPort)
+                ? $"{ip}:{port}"
+                : $"{ip}:8080 → backend :{_lbBackendPort}";
+
             LogService.Add("CACHE", "STORE",
-                $"Cached '{domain}' -> {ip}:{port} [{html.Length} bytes] " +
-                $"TTL={Cache.DefaultTtlMinutes}min - {msTotal:F2} ms (full network round-trip)");
+                $"Cached '{domain}' [{portDisplay}] [{html.Length} bytes] " +
+                $"TTL={Cache.DefaultTtlMinutes}min " +
+                $"— {msTotal:F2} ms (full network round-trip)",
+                msTotal);
             // End cache store
 
             _html = html;
-            _statusText = $"OK  {domain}  [{html.Length} bytes]  ({msTotal:F2} ms)";
+            string lbInfo = string.IsNullOrEmpty(_lbBackendPort)
+                ? string.Empty
+                : $"  via :{_lbBackendPort} [{_lbAlgorithm}]";
+
+            _statusText = $"OK  {domain}  [{html.Length} bytes]" +
+                          $"  ({msTotal:F2} ms){lbInfo}";
             _statusIcon = "+";
             _statusClass = "ok";
         }

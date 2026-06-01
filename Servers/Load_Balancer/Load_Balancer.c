@@ -3,6 +3,7 @@
 #include <winsock2.h>
 #include <windows.h>
 #include <stdlib.h>
+#include <time.h>
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -20,6 +21,9 @@ int server_count = 0;
 char algorithm[50] = "Round Robin";
 
 int rr_index = 0;
+int wrr_index = 0;
+int wrr_current_weight = 0;
+char last_config_snapshot[4096] = {0};
 
 void reload_config() {
     FILE *f = fopen("lb_config.json", "r");
@@ -84,6 +88,15 @@ void reload_config() {
     
     memcpy(servers, new_servers, sizeof(ServerConfig) * new_server_count);
     server_count = new_server_count;
+
+    if (strcmp(last_config_snapshot, json) != 0) {
+        strncpy(last_config_snapshot, json, sizeof(last_config_snapshot) - 1);
+        last_config_snapshot[sizeof(last_config_snapshot) - 1] = '\0';
+
+        /* Reset weighted counter when config changes */
+        wrr_index = 0;
+        wrr_current_weight = 0;
+    }
 }
 
 void write_stats(const char* last_route) {
@@ -139,23 +152,53 @@ DWORD WINAPI handle_client(LPVOID arg) {
             }
         }
     } else if (strcmp(algorithm, "Weighted Round Robin") == 0) {
-        // Simple weighted logic
-        int total_weight = 0;
+        /*
+         * Deterministic Weighted Round Robin:
+         * wrr_index = current server position in the ordered list
+         * wrr_current_weight = how many times current server
+         *                      has been served in this cycle
+         *
+         * Algorithm: serve server[wrr_index] for weight[wrr_index]
+         * times, then move to next server, repeat.
+         * This guarantees exact weight distribution.
+         */
+
+        /* Build candidate list for this domain */
+        int candidates[100];
+        int cand_count = 0;
         for (int i = 0; i < server_count; i++) {
-            if (strcmp(servers[i].domain, host) == 0) total_weight += servers[i].weight;
+            if (strcmp(servers[i].domain, host) == 0 && servers[i].weight > 0) {
+                candidates[cand_count++] = i;
+            }
         }
-        if (total_weight > 0) {
-            int rnd = rand() % total_weight;
-            int cur = 0;
-            for (int i = 0; i < server_count; i++) {
-                if (strcmp(servers[i].domain, host) == 0) {
-                    cur += servers[i].weight;
-                    if (rnd < cur) {
-                        selected_idx = i;
-                        break;
-                    }
+
+        /* Serve heavier servers first within each deterministic cycle. */
+        for (int i = 0; i < cand_count - 1; i++) {
+            for (int j = i + 1; j < cand_count; j++) {
+                if (servers[candidates[j]].weight > servers[candidates[i]].weight) {
+                    int tmp = candidates[i];
+                    candidates[i] = candidates[j];
+                    candidates[j] = tmp;
                 }
             }
+        }
+
+        if (cand_count > 0) {
+            /* Wrap wrr_index to valid range for this domain */
+            wrr_index = wrr_index % cand_count;
+
+            int idx = candidates[wrr_index];
+
+            /* Serve this server one more time */
+            wrr_current_weight++;
+
+            /* If served enough times for its weight, move to next */
+            if (wrr_current_weight >= servers[idx].weight) {
+                wrr_current_weight = 0;
+                wrr_index = (wrr_index + 1) % cand_count;
+            }
+
+            selected_idx = idx;
         }
     } else {
         // Round Robin
@@ -239,6 +282,7 @@ int main() {
     if (bind(s, (struct sockaddr *)&server, sizeof(server)) == SOCKET_ERROR) return 1;
     
     listen(s, 100);
+    srand((unsigned int)time(NULL));
     printf("Load Balancer listening on port 8080...\n\n");
     
     while(1) {

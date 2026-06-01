@@ -1718,3 +1718,35 @@ body.loaded .casa-shell {
   margin-top: 8px;
   font-family: var(--font-mono);
 }
+
+/* LB inline badge in browser toolbar */
+.lb-inline-badge {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 0 10px;
+  border-left: 1px solid var(--border);
+}
+
+.lb-inline-badge strong {
+  color: var(--clay);
+  font-weight: 700;
+}
+
+/* LB log row color in Live Packet Tracer */
+.log-row.lb .log-bar {
+  background: var(--clay);
+}
+
+.log-row.lb .log-proto {
+  color: var(--clay);
+  font-weight: 700;
+}
+
+.log-row.lb .log-action {
+  color: var(--clay);
+}
+
+.log-row.lb {
+  background: rgba(196, 120, 90, 0.04);
+}
