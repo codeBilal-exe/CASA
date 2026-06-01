@@ -4,17 +4,17 @@
     {
       "domain": "apple.com",
       "port": 8081,
-      "weight": 8
+      "weight": 2
     },
     {
       "domain": "apple.com",
       "port": 8084,
-      "weight": 1
+      "weight": 2
     },
     {
       "domain": "apple.com",
       "port": 8085,
-      "weight": 9
+      "weight": 2
     },
     {
       "domain": "google.com",
